@@ -14,6 +14,7 @@ test('recognises frustration signals', () => {
 
 test('recognises SDG 17 explanation requests', () => {
   assert.equal(classifyIntent('Explain the SDG 17 features').name, 'explain_sdg17');
+  assert.equal(classifyIntent('what is sdg').name, 'explain_sdg17');
   assert.equal(classifyIntent('what are the five pillars').name, 'explain_sdg17');
 });
 

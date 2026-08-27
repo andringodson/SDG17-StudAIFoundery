@@ -100,8 +100,10 @@ export function AssistantLauncher() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="glow-btn fixed bottom-5 right-5 z-40 flex h-14 items-center gap-2 rounded-full px-5 font-semibold shadow-2xl"
+        className="glow-btn fixed z-[100] flex h-14 items-center gap-2 rounded-full px-5 font-semibold shadow-2xl"
+        style={{ right: '1.25rem', bottom: '1.25rem' }}
         aria-haspopup="dialog"
+        aria-expanded={open}
       >
         <span aria-hidden="true">✦</span> Stud AI
       </button>
@@ -111,7 +113,7 @@ export function AssistantLauncher() {
           role="dialog"
           aria-label="Stud AI Assistant"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex h-[100dvh] w-full flex-col border border-line bg-surface-1 sm:inset-auto sm:bottom-5 sm:right-5 sm:h-[min(38rem,calc(100dvh-2.5rem))] sm:w-[min(26rem,calc(100vw-2.5rem))] sm:rounded-2xl sm:shadow-2xl"
+          className="fixed inset-0 z-[110] flex h-[100dvh] w-full flex-col overflow-hidden border border-line bg-surface-1 shadow-2xl sm:inset-auto sm:bottom-5 sm:right-5 sm:h-[min(38rem,calc(100dvh-2.5rem))] sm:w-[min(27rem,calc(100vw-2.5rem))] sm:rounded-2xl"
         >
           <header className="flex items-start justify-between border-b border-line bg-[radial-gradient(circle_at_top_left,rgb(0_174_214_/_0.16),transparent_56%)] px-4 py-3">
             <div className="flex gap-2.5">
@@ -130,7 +132,7 @@ export function AssistantLauncher() {
             </div>
           </header>
 
-          <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4" aria-live="polite">
+          <div ref={scrollRef} className="assistant-chat-scroll min-h-0 flex-1 space-y-4 overflow-y-auto p-4" aria-live="polite">
             {messages.length === 0 && (
               <div>
                 <div className="rounded-xl border border-brand-cyan/25 bg-brand-deep/20 p-3 text-sm text-text-2">
@@ -174,7 +176,7 @@ export function AssistantLauncher() {
                     <button onClick={() => setMessages((ms) => [...ms, { from: 'ai', text: 'Cancelled — no reminder was created.' }])} className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold">Cancel</button>
                   </div>
                 )}
-                {m.suggestions && (
+                {m.suggestions && i === messages.length - 1 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {m.suggestions.map((s) => (
                       <button key={s} onClick={() => send(s)} className="rounded-full border border-line px-2.5 py-1 text-xs text-text-2 hover:bg-white/5">
@@ -183,7 +185,7 @@ export function AssistantLauncher() {
                     ))}
                   </div>
                 )}
-                {m.actions && (
+                {m.actions && i === messages.length - 1 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {m.actions.map((action) => (
                       <a key={action.href} href={action.href} onClick={() => setOpen(false)} className="interactive-outline rounded-full border border-brand-cyan/40 px-2.5 py-1 text-xs font-semibold text-text">
@@ -192,7 +194,7 @@ export function AssistantLauncher() {
                     ))}
                   </div>
                 )}
-                {m.from === 'ai' && !m.pendingConfirmation && (
+                {m.from === 'ai' && !m.pendingConfirmation && i === messages.length - 1 && (
                   <div className="mt-2 flex items-center gap-2 text-xs text-text-3">
                     <span>Helpful?</span>
                     <button onClick={() => setMessages((ms) => [...ms, { from: 'ai', text: 'Thanks for the feedback.' }])} aria-label="This answer was helpful" className="rounded px-1 hover:bg-white/10">👍</button>
@@ -206,7 +208,7 @@ export function AssistantLauncher() {
 
           <form
             onSubmit={(e) => { e.preventDefault(); send(input); }}
-            className="border-t border-line p-3"
+            className="border-t border-line bg-surface-1/95 p-3 backdrop-blur"
           >
             <div className="mb-2 flex gap-1" aria-label="Assistant language">
               {(Object.keys(LANGUAGE_LABELS) as AssistantLanguage[]).map((code) => (

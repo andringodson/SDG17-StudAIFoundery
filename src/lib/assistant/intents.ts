@@ -26,7 +26,7 @@ const PATTERNS: [RegExp, IntentName][] = [
   [/\b(my|list) reminders?\b/i, 'list_reminders'],
   [/\bmy (pledge|pledges)\b|pledge wall/i, 'pledges'],
   [/\bmy (points|badges|progress|impact score)\b/i, 'progress'],
-  [/\bsdg ?17\b|five pillars|means of implementation/i, 'explain_sdg17'],
+  [/\bsdg ?17\b|\bwhat(?:'s| is) sdg\b|\bexplain sdg\b|five pillars|means of implementation/i, 'explain_sdg17'],
   [/\bhow (does|do) (this |the )?platform work\b|how (do i |to )?navigate/i, 'how_platform_works'],
   [/\b(show|what('s| is)) my performance\b/i, 'ambiguous_performance']
 ];

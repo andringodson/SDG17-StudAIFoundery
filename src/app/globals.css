@@ -291,6 +291,12 @@ body {
   background: rgb(7 34 44 / 0.92);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08), 0 0 18px rgb(0 174 214 / 0.2);
 }
+.assistant-chat-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(0 174 214 / 0.65) transparent;
+}
+.assistant-chat-scroll::-webkit-scrollbar { width: 7px; }
+.assistant-chat-scroll::-webkit-scrollbar-thumb { background: rgb(0 174 214 / 0.55); border-radius: 999px; }
 @media (max-width: 640px) {
   .hero-eyebrow { max-width: 100%; padding-right: 0.75rem; font-size: 0.63rem; letter-spacing: 0.12em; }
   .hero-eyebrow::after { display: none; }
