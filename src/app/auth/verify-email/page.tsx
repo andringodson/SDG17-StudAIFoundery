@@ -29,7 +29,9 @@ export default function VerifyEmailPage() {
     setNotice('');
     const res = await fetch('/api/auth/otp/send', { method: 'POST' });
     const data = await res.json();
-    setNotice(data.delivered ? 'A new code has been sent.' : 'Email delivery is not configured yet — check the server console for the code.');
+    setNotice(data.delivered
+      ? 'A new code has been sent to your email.'
+      : 'Email sending is not switched on for this site yet, so the code could not be delivered. Please contact the site owner to get your account verified.');
     setCooldown(RESEND_COOLDOWN_S);
   }
 

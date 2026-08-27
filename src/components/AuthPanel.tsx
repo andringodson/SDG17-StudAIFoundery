@@ -63,7 +63,9 @@ export function AuthPanel() {
     const data = await res.json();
     if (res.ok) {
       setOtpSent(true);
-      setNotice(data.delivered ? 'Code sent to your email.' : 'Email not configured yet — check the server console for the code.');
+      setNotice(data.delivered
+        ? 'Code sent to your email.'
+        : 'Email sending is not switched on for this site yet, so the code could not be delivered. Please contact the site owner to get your account verified.');
     } else {
       setNotice(data.error ?? 'Could not send a code.');
     }

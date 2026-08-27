@@ -57,3 +57,28 @@ test('detects Tamil and Hindi script while preserving English as the default', (
   assert.equal(detectAssistantLanguage('SDG 17 क्या है?'), 'hi');
   assert.equal(detectAssistantLanguage('What is SDG 17?'), 'en');
 });
+
+test('a question about one pillar answers that pillar, not the generic summary', () => {
+  // Regression: 'finance' used to sit as a keyword on the general SDG 17
+  // entry, so "what is finance" returned the whole five-pillar overview.
+  const finance = findSupportKnowledge('what is finance');
+  assert.match(finance.text, /^Finance is the first SDG 17 pillar/);
+  assert.equal(finance.actions[0].href, '/#finance');
+
+  const trade = findSupportKnowledge('what is trade');
+  assert.match(trade.text, /^Trade is the fourth SDG 17 pillar/);
+
+  const capacity = findSupportKnowledge('what is capacity building');
+  assert.match(capacity.text, /^Capacity Building is the third SDG 17 pillar/);
+
+  const technology = findSupportKnowledge('tell me about technology transfer');
+  assert.match(technology.text, /^Technology is the second SDG 17 pillar/);
+
+  const systemic = findSupportKnowledge('what does policy coherence mean');
+  assert.match(systemic.text, /^Systemic Issues is the fifth SDG 17 pillar/);
+});
+
+test('the broad SDG 17 overview still answers a genuinely broad question', () => {
+  const answer = findSupportKnowledge('what are the five pillars of SDG 17');
+  assert.match(answer.text, /organises its targets into five pillars/i);
+});
