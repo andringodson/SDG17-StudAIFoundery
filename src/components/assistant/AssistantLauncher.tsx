@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import type { AssistantReply } from '@/app/api/assistant/message/route';
 import type { AssistantAction, AssistantLanguage } from '@/lib/assistant/knowledge';
+import { isSpeechSupported, startDictation, speechErrorMessage, type DictationHandle } from '@/lib/speech';
 
 interface ChatMessage {
   from: 'user' | 'ai';
@@ -31,8 +32,43 @@ export function AssistantLauncher() {
   const [busy, setBusy] = useState(false);
   const [language, setLanguage] = useState<AssistantLanguage>('en');
   const [previousTopic, setPreviousTopic] = useState<string>();
+  const [listening, setListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(false);
+  const [voiceError, setVoiceError] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dictationRef = useRef<DictationHandle | null>(null);
+
+  // Checked after mount, never during render — the API exists only in the
+  // browser, and reading it on the server would break hydration.
+  useEffect(() => { setVoiceSupported(isSpeechSupported()); }, []);
+
+  function toggleDictation() {
+    setVoiceError('');
+    if (listening) {
+      dictationRef.current?.stop();
+      return;
+    }
+    const handle = startDictation(
+      language,
+      (text, isFinal) => {
+        setInput(text);
+        // Auto-send on a completed utterance so speaking a question is one
+        // action, not "speak, then reach for the mouse".
+        if (isFinal) { dictationRef.current?.stop(); void send(text); }
+      },
+      (code) => { setVoiceError(speechErrorMessage(code)); setListening(false); },
+      () => setListening(false)
+    );
+    if (!handle) { setVoiceError('Voice input is not supported in this browser.'); return; }
+    dictationRef.current = handle;
+    setListening(true);
+  }
+
+  // Stop the microphone if the panel closes mid-utterance.
+  useEffect(() => {
+    if (!open && listening) { dictationRef.current?.stop(); setListening(false); }
+  }, [open, listening]);
 
   useEffect(() => {
     fetch('/api/me').then((r) => r.json()).then((d) => { if (d.user?.role) setRole(d.user.role); }).catch(() => {});
@@ -214,15 +250,33 @@ export function AssistantLauncher() {
                 </button>
               ))}
             </div>
+            {voiceError && <p role="alert" className="mb-2 text-xs text-red-300">{voiceError}</p>}
+            {listening && <p role="status" className="mb-2 text-xs text-text-3">Listening… speak now.</p>}
             <div className="flex gap-2">
             <input
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask a question…"
+              placeholder={listening ? 'Listening…' : 'Ask a question…'}
               aria-label="Message"
               className="flex-1 min-h-[40px] rounded-lg border border-line bg-surface-2 px-3 text-sm"
             />
+            {/* Rendered only where the browser actually implements speech
+                recognition (Firefox does not), so it is never present-but-broken. */}
+            {voiceSupported && (
+              <button
+                type="button"
+                onClick={toggleDictation}
+                aria-label={listening ? 'Stop voice input' : 'Start voice input'}
+                aria-pressed={listening}
+                title={listening ? 'Stop listening' : 'Ask by voice'}
+                className={`min-h-[40px] w-10 shrink-0 rounded-lg border text-base transition ${
+                  listening ? 'border-red-400 bg-red-400/15 text-red-300' : 'border-line text-text-2 hover:bg-white/5'
+                }`}
+              >
+                {listening ? '■' : '🎤'}
+              </button>
+            )}
             <button type="submit" disabled={busy} className="glow-btn min-h-[40px] rounded-lg px-4 text-sm font-semibold disabled:opacity-40">
               Send
             </button>

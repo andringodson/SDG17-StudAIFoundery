@@ -89,7 +89,11 @@ export async function POST(req: NextRequest) {
 
       case 'capabilities':
         return respond({
-          text: `${prefix}I can look things up on this platform: how the simulators and the map work, what SDG 17 and its five pillars cover, and — once you're signed in — your own points, badges, pledges, and reminders.\n\nI match on keywords rather than reading freely, so short, direct questions work best. If I can't answer, I'll say so instead of guessing.`,
+          text: `${prefix}I can explain how this platform works — the simulators, the map, SDG 17 and its five pillars — and, once you're signed in, look up your own points, badges, pledges, and reminders.${
+            isLlmConfigured()
+              ? ' Beyond that, ask me anything you like: I can discuss general topics too, not only what is on this site.'
+              : ' Outside those topics I match on keywords rather than reading freely, so short, direct questions work best.'
+          } If I don't know something, I'll say so rather than guess.`,
           suggestions: suggestionsFor(role)
         });
 
@@ -209,10 +213,13 @@ export async function POST(req: NextRequest) {
           if (llm) return respond({ text: `${prefix}${llm.text}`, suggestions: ['Explain SDG 17', 'How does this platform work?', 'I need more help'], disclaimer: llm.usedDisclaimer });
         }
 
-        // Says what it doesn't know and offers a human, rather than reciting
-        // the same capability list at every dead end.
+        // Reached only when the LLM tier is off, or was on and failed. The
+        // wording has to differ, because "I only cover SDG 17" is untrue once
+        // the model is answering general questions.
         return respond({
-          text: `${prefix}I don’t have an answer for that one — I only cover this platform and SDG 17, and I match on keywords rather than reading freely, so I miss a lot.\n\nTry rephrasing it more directly, or send it to a person who can actually help.`,
+          text: isLlmConfigured()
+            ? `${prefix}Sorry — I couldn’t get an answer for that just now. Please try again in a moment, or send it to a person who can help.`
+            : `${prefix}I don’t have an answer for that one — I only cover this platform and SDG 17, and I match on keywords rather than reading freely, so I miss a lot.\n\nTry rephrasing it more directly, or send it to a person who can actually help.`,
           escalate: true
         });
       }
