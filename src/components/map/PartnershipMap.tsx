@@ -41,8 +41,19 @@ export function PartnershipMap() {
       </p>
 
       <div className="flex flex-wrap gap-4">
-        <div className="glow-card min-w-[min(100%,34rem)] flex-[999] rounded-3xl border border-line bg-surface-1/80 p-4">
+        <div className="glow-card partnership-map min-w-[min(100%,34rem)] flex-[999] rounded-3xl border border-line bg-surface-1/80 p-4">
           <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className="w-full" role="group" aria-label="Interactive world map of partnership activity">
+            <defs>
+              <linearGradient id="connectionFlow" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stopColor="#00aed6" stopOpacity="0.2" />
+                <stop offset="0.5" stopColor="#85e6ff" stopOpacity="0.95" />
+                <stop offset="1" stopColor="#8b5cf6" stopOpacity="0.25" />
+              </linearGradient>
+              <filter id="connectionGlow" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="2.5" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+            </defs>
             <g aria-hidden="true" opacity={0.5}>
               {LANDMASSES.map((mass) => (
                 <polygon
@@ -65,17 +76,11 @@ export function PartnershipMap() {
                 const mx = (p.x + q.x) / 2;
                 const my = (p.y + q.y) / 2 - Math.abs(q.x - p.x) * 0.18 - 14;
                 const dimmed = filter !== 'all' && !(a.categories.includes(filter) && b.categories.includes(filter));
-                return (
-                  <path
-                    key={i}
-                    d={`M${p.x} ${p.y} Q${mx} ${my} ${q.x} ${q.y}`}
-                    fill="none"
-                    stroke="#ffffff"
-                    strokeWidth={1.4}
-                    strokeDasharray="5 9"
-                    opacity={dimmed ? 0.05 : 0.3}
-                  />
-                );
+                const d = `M${p.x} ${p.y} Q${mx} ${my} ${q.x} ${q.y}`;
+                return <g key={i}>
+                  <path d={d} fill="none" stroke="#9edfff" strokeWidth={1.2} strokeDasharray="5 9" opacity={dimmed ? 0.05 : 0.28} />
+                  {!dimmed && <path className="map-connection-flow" d={d} fill="none" stroke="url(#connectionFlow)" strokeWidth={2.2} strokeDasharray="8 46" opacity="0.9" filter="url(#connectionGlow)" style={{ animationDelay: `${i * -0.7}s` }} />}
+                </g>;
               })}
             </g>
 
@@ -97,11 +102,11 @@ export function PartnershipMap() {
                     onKeyDown={(e) => { if (!dimmed && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setSelected(region.id); } }}
                     style={{ cursor: dimmed ? 'default' : 'pointer', opacity: dimmed ? 0.22 : 1 }}
                   >
-                    <circle cx={p.x} cy={p.y} r={r + 12} fill="#ffffff" opacity={isSel ? 0.16 : 0.05} />
+                    <circle className="map-node-pulse" cx={p.x} cy={p.y} r={r + 13} fill="#41d8ff" opacity={isSel ? 0.2 : 0.09} style={{ animationDelay: `${step * -0.6}s` }} />
                     <circle
                       cx={p.x} cy={p.y} r={r}
                       fill={`var(--seq-${step}, var(--color-brand-royal))`}
-                      stroke={isSel ? '#ffffff' : 'rgb(8 9 10 / 0.85)'}
+                      stroke={isSel ? '#dff8ff' : 'rgb(121 221 255 / 0.7)'}
                       strokeWidth={isSel ? 3 : 2}
                       style={{ ['--seq-1' as string]: '#12406e', ['--seq-2' as string]: '#1a5fa0', ['--seq-3' as string]: '#2a78d6', ['--seq-4' as string]: '#5b9ae8', ['--seq-5' as string]: '#8fbcf2' }}
                     />
@@ -122,7 +127,7 @@ export function PartnershipMap() {
               style={{ background: 'linear-gradient(90deg,#12406e,#2a78d6,#8fbcf2)' }}
               aria-hidden="true"
             />
-            Circle size shows active projects; shade shows committed funding. Select a region for detail.
+            Circle size shows active projects; shade shows committed funding. Flowing traces show active regional connections. Select a region for detail.
           </p>
         </div>
 

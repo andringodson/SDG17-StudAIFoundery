@@ -52,7 +52,8 @@ export async function POST(req: NextRequest) {
       sessionVersion: user.session_version
     });
     return NextResponse.json({
-      user: { id: user.id, username: user.username, role: user.role, emailVerified: user.is_email_verified }
+      user: { id: user.id, username: user.username, role: user.role, emailVerified: user.is_email_verified },
+      requiresEmailVerification: !user.is_email_verified
     });
   } catch (err) {
     return handleApiError(err);

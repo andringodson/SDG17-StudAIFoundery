@@ -6,12 +6,15 @@ import {
   getProfile, getProgressSummary, getMyPledges, createReminder, listReminders,
   logAiAction, formatBadgeCount
 } from '@/lib/assistant/tools';
-import { SDG17_EXPLAINER, PLATFORM_HELP, DISCLAIMER } from '@/lib/assistant/knowledge';
+import { SDG17_EXPLAINER, PLATFORM_HELP, DISCLAIMER, detectAssistantLanguage, findSupportKnowledge, languagePreface, type AssistantAction, type AssistantLanguage } from '@/lib/assistant/knowledge';
 import { handleApiError } from '@/lib/apiError';
 import { formatCount } from '@/lib/inr';
 
 const Body = z.object({
   message: z.string().min(1).max(1000),
+  context: z.object({ pathname: z.string().max(200).optional(), hash: z.string().max(100).optional() }).optional(),
+  language: z.enum(['en', 'ta', 'hi']).optional(),
+  previousTopic: z.string().max(100).optional(),
   // Present only after the user has clicked "Confirm" on a proposed write action.
   confirmReminder: z.object({ note: z.string(), remindAt: z.string() }).optional()
 });
@@ -23,6 +26,9 @@ export interface AssistantReply {
   frustration?: boolean;
   pendingConfirmation?: { kind: 'reminder'; note: string; remindAt: string };
   disclaimer?: boolean;
+  actions?: AssistantAction[];
+  topic?: string;
+  language?: AssistantLanguage;
 }
 
 export async function POST(req: NextRequest) {
@@ -53,14 +59,16 @@ export async function POST(req: NextRequest) {
       } satisfies AssistantReply);
     }
 
+    const language = parsed.data.language ?? detectAssistantLanguage(parsed.data.message);
+    const prefix = languagePreface(language);
     const intent = classifyIntent(parsed.data.message);
 
-    const respond = (reply: AssistantReply) => NextResponse.json(reply);
+    const respond = (reply: AssistantReply) => NextResponse.json({ ...reply, language });
 
     switch (intent.name) {
       case 'greeting':
         return respond({
-          text: `Hello! I can help you navigate the platform, explain SDG 17, or look up your own progress and pledges. What would you like to do?`,
+          text: `${prefix}Hello! I’m the Stud AI Assistant. I can help you use the platform, understand SDG 17, build a partnership strategy, or look up your own progress and pledges.`,
           suggestions: suggestionsFor(role)
         });
 
@@ -78,10 +86,10 @@ export async function POST(req: NextRequest) {
         });
 
       case 'explain_sdg17':
-        return respond({ text: SDG17_EXPLAINER, suggestions: ['How does this platform work?', 'Show my points'] });
+        return respond({ text: `${prefix}${SDG17_EXPLAINER}`, suggestions: ['Give me an SDG 17 example', 'How does this platform work?'], actions: [{ label: 'Explore SDG 17 tools', href: '/#finance' }, { label: 'View the map', href: '/#map' }], topic: 'sdg17' });
 
       case 'how_platform_works':
-        return respond({ text: PLATFORM_HELP, suggestions: ['Explain SDG 17', 'Show my points'] });
+        return respond({ text: `${prefix}${PLATFORM_HELP}`, suggestions: ['Explain SDG 17', 'Help me build a project'], actions: [{ label: 'Explore the map', href: '/#map' }, { label: 'Build a partnership', href: '/#builder' }], topic: 'platform' });
 
       case 'ambiguous_performance':
         return respond({
@@ -152,12 +160,25 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      default:
+      default: {
+        const knowledge = findSupportKnowledge(parsed.data.message);
+        if (knowledge) return respond({
+          text: `${prefix}${knowledge.text}`,
+          actions: knowledge.actions,
+          suggestions: ['Explain SDG 17', 'How does this platform work?', 'I need more help'],
+          topic: knowledge.actions[0]?.href.includes('builder') ? 'builder' : knowledge.actions[0]?.href.includes('map') ? 'map' : 'platform'
+        });
+        if (parsed.data.previousTopic === 'sdg17' && /\b(example|idea|sample)\b/i.test(parsed.data.message)) return respond({
+          text: `${prefix}An SDG 17 example is a university, local government, solar company, and community group sharing funding, skills, and technology to install and maintain solar-powered classrooms. The Partnership Builder can help you compare stakeholder choices and a budget for this kind of strategy.`,
+          actions: [{ label: 'Open Partnership Builder', href: '/#builder' }],
+          topic: 'sdg17'
+        });
         return respond({
-          text: "I'm not fully confident about that yet — I can help with platform navigation, SDG 17 explanations, or your own points and pledges. I can also connect you with support.",
+          text: `${prefix}I couldn’t find a clear answer to that question. I can help with platform navigation, SDG 17, the Partnership Builder, or your own points and pledges.`,
           suggestions: suggestionsFor(role),
           escalate: true
         });
+      }
     }
   } catch (err) {
     await logAiAction({ userId: session?.userId ?? null, role, toolName: 'unknown', permissionDecision: 'allowed', resultStatus: 'error', errorMessage: String(err) });

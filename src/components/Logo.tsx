@@ -1,11 +1,9 @@
 'use client';
 
 /**
- * The mark is the numeral itself — "17" drawn as a single confident geometric
- * line-glyph, not a network/globe/handshake icon. Those are the three most
- * over-used shorthand for "partnership," and none of them say "17" the way
- * this does. One stroke weight, one colour, no gradient — it has to work at
- * 20px in a browser tab as well as it does at 200px.
+ * The Foundery Mark: two open forms lock into a third shared centre. It is a
+ * compact original symbol for independent partners making something together.
+ * The mark holds up at favicon size and has no reliance on stock SDG imagery.
  */
 export function LogoMark({ size = 34, animated = false }: { size?: number; animated?: boolean }) {
   return (
@@ -17,19 +15,17 @@ export function LogoMark({ size = 34, animated = false }: { size?: number; anima
       aria-hidden="true"
       className={animated ? 'logo-mark logo-mark--animated' : 'logo-mark'}
     >
-      <rect x="0.5" y="0.5" width="39" height="39" rx="9" fill="#000000" stroke="rgb(255 255 255 / 0.16)" />
+      <rect x="0.5" y="0.5" width="39" height="39" rx="11" fill="#07151d" stroke="#43d6f2" strokeOpacity="0.6" />
       <g
         className="logo-mark__glyph"
-        stroke="#ececee"
-        strokeWidth="3.4"
+        stroke="#dff9ff"
+        strokeWidth="2.8"
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        {/* "1" */}
-        <path d="M9 13.5 L14.5 9.5 L14.5 30.5" />
-        <path d="M9 30.5 L20 30.5" />
-        {/* "7" */}
-        <path d="M22 9.5 L33 9.5 L23.5 30.5" />
+        <path d="M9 13.5 L15.4 9.5 L21.8 13.5 L21.8 20.8 L15.4 24.7 L9 20.8 Z" />
+        <path d="M18.2 19.2 L24.6 15.3 L31 19.2 L31 26.5 L24.6 30.5 L18.2 26.5 Z" />
+        <path d="M18.2 20 L21.8 20" stroke="#43d6f2" />
       </g>
     </svg>
   );

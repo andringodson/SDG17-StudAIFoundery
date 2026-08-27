@@ -72,7 +72,7 @@ export default function CompanyRegisterPage() {
         setError(authErrorMessage(data.code ?? data.error) + (data.missing ? ` (needs ${data.missing.join(', ')})` : ''));
         return;
       }
-      router.push('/dashboard/company?welcome=1');
+      router.push('/auth/verify-email');
     } catch {
       setError(authErrorMessage('network_error'));
     } finally {

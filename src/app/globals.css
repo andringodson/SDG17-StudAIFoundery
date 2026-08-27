@@ -235,3 +235,33 @@ body {
   border-radius: 9999px;
   background: transparent;
 }
+
+.partnership-map {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 74% 34%, rgb(0 174 214 / 0.12), transparent 30%),
+    radial-gradient(circle at 26% 72%, rgb(139 92 246 / 0.08), transparent 27%),
+    var(--color-surface-1);
+}
+.map-connection-flow { animation: connectionFlow 4.8s linear infinite; }
+.map-node-pulse { transform-box: fill-box; transform-origin: center; animation: nodePulse 3.8s ease-in-out infinite; }
+@keyframes connectionFlow { to { stroke-dashoffset: -108; } }
+@keyframes nodePulse { 0%, 100% { opacity: 0.06; transform: scale(0.92); } 50% { opacity: 0.25; transform: scale(1.08); } }
+
+.hero-title {
+  min-height: 3.08em;
+  text-shadow: 0 0 28px rgb(173 241 255 / 0.12), 0 0 70px rgb(0 174 214 / 0.08);
+}
+.hero-cursor {
+  display: inline-block;
+  width: 0.06em;
+  height: 0.82em;
+  margin-left: 0.09em;
+  vertical-align: -0.06em;
+  background: var(--color-brand-cyan);
+  box-shadow: 0 0 13px var(--color-brand-cyan);
+  animation: typingCursor 0.78s steps(1) infinite;
+}
+.hero-cursor--done { animation: none; opacity: 0; }
+@keyframes typingCursor { 50% { opacity: 0; } }

@@ -48,7 +48,7 @@ function LoginInner() {
         setError(authErrorMessage(data.code ?? data.error));
         return;
       }
-      router.push(ROLE_HOME[data.user.role] ?? '/dashboard/general');
+      router.push(data.requiresEmailVerification ? '/auth/verify-email' : (ROLE_HOME[data.user.role] ?? '/dashboard/general'));
     } catch {
       setError(authErrorMessage('network_error'));
     } finally {
@@ -118,17 +118,18 @@ function LoginInner() {
           title="Google sign-in needs a Google OAuth app registered by the site owner — not yet configured."
           className="flex min-h-[44px] items-center justify-center rounded-lg border border-line text-sm font-semibold text-text-3 opacity-50"
         >
-          Continue with Google (coming soon)
+          Continue with Google (requires site setup)
         </button>
         <button
           type="button"
           disabled
           aria-disabled
-          title="Microsoft sign-in needs an Azure AD app registered by the site owner — not yet configured."
+          title="Facebook sign-in needs a Meta OAuth app registered by the site owner — not yet configured."
           className="flex min-h-[44px] items-center justify-center rounded-lg border border-line text-sm font-semibold text-text-3 opacity-50"
         >
-          Continue with Microsoft (coming soon)
+          Continue with Facebook (requires site setup)
         </button>
+        <p className="text-center text-xs text-text-3">Social sign-in is shown only as unavailable until the required Google or Meta OAuth credentials are configured securely.</p>
       </div>
 
       <p className="mt-6 text-center text-sm text-text-3">

@@ -164,6 +164,23 @@ CREATE TABLE IF NOT EXISTS ai_reminders (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- User-submitted support requests. Contact details are optional and only
+-- stored when the requester explicitly opts in on the support form.
+CREATE TABLE IF NOT EXISTS support_tickets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    reference VARCHAR(24) UNIQUE NOT NULL,
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    category VARCHAR(60) NOT NULL,
+    description TEXT NOT NULL,
+    current_page VARCHAR(255),
+    contact_email VARCHAR(255),
+    contact_consent BOOLEAN NOT NULL DEFAULT FALSE,
+    status VARCHAR(24) NOT NULL DEFAULT 'received'
+        CHECK (status IN ('received', 'in_review', 'resolved', 'closed')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- -----------------------------------------------------------------------------
 -- Row-Level Security
 -- The app talks to Postgres with the service-role connection string from API
@@ -181,6 +198,7 @@ ALTER TABLE investor_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE password_reset_tokens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_reminders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE support_tickets ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
@@ -213,6 +231,9 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_ai_reminders') THEN
         CREATE POLICY service_role_all_ai_reminders ON ai_reminders FOR ALL TO service_role USING (true) WITH CHECK (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_support_tickets') THEN
+        CREATE POLICY service_role_all_support_tickets ON support_tickets FOR ALL TO service_role USING (true) WITH CHECK (true);
     END IF;
 END $$;
 

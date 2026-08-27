@@ -6,6 +6,8 @@ import { PartnershipMap } from '@/components/map/PartnershipMap';
 import { LivePoll } from '@/components/LivePoll';
 import { PledgeWall } from '@/components/PledgeWall';
 import { AuthPanel } from '@/components/AuthPanel';
+import { HeroTitle } from '@/components/HeroTitle';
+import { ScrollReveal } from '@/components/ScrollReveal';
 
 const STATS = [
   { n: '01', label: 'Active projects', value: '5,830' },
@@ -15,16 +17,14 @@ const STATS = [
 
 export default function HomePage() {
   return (
-    <main id="main" className="mx-auto w-[min(100%-2.5rem,72rem)] pb-32 pt-10">
+    <main id="main" className="mx-auto w-[min(100%-2.5rem,72rem)] pb-32 pt-7 sm:pt-8">
       {/* HERO — bold headline, numbered stat callouts (metacci/nbnzia-inspired) */}
-      <section className="grid gap-8 py-16 sm:py-24">
+      <section className="grid gap-7 py-14 sm:py-20">
         <p className="inline-flex w-fit items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-text-3">
           <span className="num-badge h-9 w-9 text-lg">17</span>
           United Nations Sustainable Development Goal
         </p>
-        <h1 className="max-w-[18ch] text-5xl font-medium leading-[1.05] tracking-tight text-text sm:text-7xl">
-          Global challenges require global partnerships.
-        </h1>
+        <HeroTitle />
         <p className="max-w-[62ch] text-lg text-text-2 sm:text-xl">
           Explore how collaboration in finance, technology, skills, trade, and policy can accelerate sustainable development.
           All figures in Indian Rupees.
@@ -100,10 +100,10 @@ export default function HomePage() {
 
 function Section({ id, eyebrow, title, children }: { id: string; eyebrow: string; title: string; children: React.ReactNode }) {
   return (
-    <section id={id} className="scroll-mt-20 py-14 sm:py-20">
+    <ScrollReveal id={id}>
       <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-text-3">{eyebrow}</p>
       <h2 className="mb-6 text-3xl font-medium tracking-tight sm:text-4xl">{title}</h2>
       {children}
-    </section>
+    </ScrollReveal>
   );
 }

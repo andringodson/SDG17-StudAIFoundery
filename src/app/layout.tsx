@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description:
     'Explore how collaboration in finance, technology, skills, trade and policy can accelerate sustainable development. All figures in Indian Rupees.',
   icons: {
-    icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='9' fill='%23000'/%3E%3Cg stroke='%23ececee' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round' fill='none'%3E%3Cpath d='M9 13.5 14.5 9.5 14.5 30.5'/%3E%3Cpath d='M9 30.5 20 30.5'/%3E%3Cpath d='M22 9.5 33 9.5 23.5 30.5'/%3E%3C/g%3E%3C/svg%3E"
+    icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='11' fill='%2307151d' stroke='%2343d6f2'/%3E%3Cg stroke='%23dff9ff' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round' fill='none'%3E%3Cpath d='M9 13.5 15.4 9.5 21.8 13.5 21.8 20.8 15.4 24.7 9 20.8Z'/%3E%3Cpath d='M18.2 19.2 24.6 15.3 31 19.2 31 26.5 24.6 30.5 18.2 26.5Z'/%3E%3Cpath d='M18.2 20 21.8 20' stroke='%2343d6f2'/%3E%3C/g%3E%3C/svg%3E"
   }
 };
 

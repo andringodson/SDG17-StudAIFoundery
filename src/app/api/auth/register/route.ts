@@ -4,6 +4,8 @@ import { query } from '@/lib/db';
 import { hashPassword, setSessionCookie } from '@/lib/auth';
 import { checkPassword } from '@/lib/passwordStrength';
 import { handleApiError } from '@/lib/apiError';
+import { generateOtp } from '@/lib/otp';
+import { sendOtpEmail } from '@/lib/mailer';
 
 const Base = z.object({
   fullName: z.string().min(2).max(120),
@@ -82,6 +84,10 @@ export async function POST(req: NextRequest) {
 
     await query('INSERT INTO user_progress (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [user.id]);
 
+    const { code, expiresAt } = generateOtp();
+    await query('UPDATE users SET otp_code = $1, otp_expires_at = $2 WHERE id = $3', [code, expiresAt, user.id]);
+    const emailDelivery = await sendOtpEmail(data.email, code);
+
     if (data.role === 'company') {
       await query(
         `INSERT INTO company_profiles (user_id, company_name, website, industry, country, city, year_founded)
@@ -103,7 +109,7 @@ export async function POST(req: NextRequest) {
       sessionVersion: user.session_version
     });
 
-    return NextResponse.json({ user: { id: user.id, username: user.username, role: user.role } }, { status: 201 });
+    return NextResponse.json({ user: { id: user.id, username: user.username, role: user.role }, emailDelivery }, { status: 201 });
   } catch (err) {
     return handleApiError(err);
   }

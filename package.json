@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test:formulas": "node --test test/formulas.test.mjs test/otp.test.mjs",
+    "test:formulas": "node --test test/formulas.test.mjs test/otp.test.mjs test/assistantIntents.test.mjs",
     "db:migrate": "node db/migrate.mjs"
   },
   "dependencies": {
