@@ -171,6 +171,12 @@ WS_SERVER_INTERNAL_URL=https://<railway-service-url>
 NEXT_PUBLIC_WS_URL=wss://<railway-service-url>/live
 ```
 
+The real-time service continuously probes Postgres every 30 seconds. `GET
+/health` is a liveness endpoint with the latest dependency state, while `GET
+/ready` returns `503` until the configured database answers a probe. After a
+database failure, the checker discards its stale pool and retries with a fresh
+connection on the next pass; it never modifies data, credentials, or schema.
+
 ---
 
 ## Accessibility

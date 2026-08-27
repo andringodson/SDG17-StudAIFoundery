@@ -2,6 +2,7 @@ import 'dotenv/config';
 import http from 'node:http';
 import express from 'express';
 import { createBot } from './bot.js';
+import { createHealthMonitor } from './health.js';
 import { attachWebSocketServer } from './ws.js';
 
 const PORT = process.env.PORT || 8787;
@@ -15,13 +16,25 @@ const {
 const app = express();
 app.use(express.json());
 
+const botConfigured = Boolean(TELEGRAM_BOT_TOKEN && WEB_APP_URL && INTERNAL_SHARED_SECRET);
+const healthMonitor = createHealthMonitor({ databaseUrl: DATABASE_URL, botConfigured });
+healthMonitor.start();
+
 app.get('/health', (_req, res) => {
   res.json({
     ok: true,
-    bot: Boolean(TELEGRAM_BOT_TOKEN),
-    db: Boolean(DATABASE_URL),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    checks: healthMonitor.snapshot()
   });
+});
+
+// Readiness is intentionally separate from liveness. Hosts can use /health to
+// keep the process alive while /ready tells dashboards and alerts whether the
+// configured database dependency is actually responding.
+app.get('/ready', (_req, res) => {
+  const checks = healthMonitor.snapshot();
+  const ready = checks.database === 'healthy';
+  res.status(ready ? 200 : 503).json({ ok: ready, checks });
 });
 
 const server = http.createServer(app);
@@ -57,3 +70,14 @@ if (TELEGRAM_BOT_TOKEN && WEB_APP_URL && INTERNAL_SHARED_SECRET) {
     'The WebSocket live-poll server still runs without it.'
   );
 }
+
+async function shutdown(signal) {
+  // eslint-disable-next-line no-console
+  console.log(`[server] received ${signal}; shutting down`);
+  await healthMonitor.stop();
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(0), 10_000).unref();
+}
+
+process.once('SIGINT', () => void shutdown('SIGINT'));
+process.once('SIGTERM', () => void shutdown('SIGTERM'));
