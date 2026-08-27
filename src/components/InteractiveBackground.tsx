@@ -86,7 +86,7 @@ export function InteractiveBackground() {
           const a = particles[i]!, b = particles[j]!;
           const dist = Math.hypot(a.x - b.x, a.y - b.y);
           if (dist < LINK_DIST) {
-            ctx!.strokeStyle = `rgba(255,255,255,${0.09 * (1 - dist / LINK_DIST)})`;
+            ctx!.strokeStyle = `rgba(255,255,255,${0.14 * (1 - dist / LINK_DIST)})`;
             ctx!.beginPath();
             ctx!.moveTo(a.x, a.y);
             ctx!.lineTo(b.x, b.y);
@@ -98,7 +98,7 @@ export function InteractiveBackground() {
           const dy = particles[i]!.y - pointer.y;
           const dist = Math.hypot(dx, dy);
           if (dist < POINTER_DIST) {
-            ctx!.strokeStyle = `rgba(255,255,255,${0.22 * (1 - dist / POINTER_DIST)})`;
+            ctx!.strokeStyle = `rgba(255,255,255,${0.3 * (1 - dist / POINTER_DIST)})`;
             ctx!.beginPath();
             ctx!.moveTo(particles[i]!.x, particles[i]!.y);
             ctx!.lineTo(pointer.x, pointer.y);
@@ -107,7 +107,7 @@ export function InteractiveBackground() {
         }
       }
 
-      ctx!.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx!.fillStyle = 'rgba(255,255,255,0.72)';
       for (const p of particles) {
         ctx!.beginPath();
         ctx!.arc(p.x, p.y, p.r, 0, Math.PI * 2);
