@@ -83,7 +83,7 @@ export function PledgeWall() {
         </Field>
         {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
         <div>
-          <button type="submit" className="glow-btn min-h-[44px] rounded-full px-5 font-bold">
+          <button type="submit" className="glow-btn min-h-[44px] rounded-lg px-5 font-bold">
             Post pledge
           </button>
         </div>
@@ -95,7 +95,7 @@ export function PledgeWall() {
 
       <ul className="grid gap-3 sm:grid-cols-2">
         {pledges.map((p) => (
-          <li key={p.id} className="glow-card rounded-r-2xl border border-line border-l-2 border-l-brand-royal bg-bg/40 p-4">
+          <li key={p.id} className="glow-card rounded-r-2xl border border-line border-l-2 border-l-white/25 bg-bg/40 p-4">
             <p className="text-sm leading-relaxed">&ldquo;{p.pledgeText}&rdquo;</p>
             <p className="mt-2 flex gap-2 text-sm">
               <span className="font-bold">{p.displayName}</span>

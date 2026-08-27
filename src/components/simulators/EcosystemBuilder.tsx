@@ -61,7 +61,7 @@ export function EcosystemBuilder() {
                 aria-pressed={active}
                 data-active={active}
                 className={`glow-card grid gap-0.5 rounded-2xl border p-3 text-left ${
-                  active ? 'border-brand-cyan bg-brand-cyan/10' : 'border-line bg-bg/40'
+                  active ? 'border-text bg-white/10' : 'border-line bg-bg/40'
                 }`}
               >
                 <span className="text-xl" aria-hidden="true">{s.icon}</span>
@@ -83,7 +83,7 @@ export function EcosystemBuilder() {
               onClick={() => setBudget(b)}
               aria-pressed={b === budget}
               className={`min-h-[40px] rounded-full border px-3 text-sm font-semibold ${
-                b === budget ? 'border-brand-cyan bg-brand-cyan/15 text-white' : 'border-line bg-surface-3 text-text-2'
+                b === budget ? 'border-text bg-white/10 text-text' : 'border-line bg-surface-3 text-text-2'
               }`}
             >
               {formatINR(b)}
@@ -97,7 +97,7 @@ export function EcosystemBuilder() {
           type="button"
           onClick={generate}
           disabled={selected.length === 0}
-          className="glow-btn min-h-[44px] rounded-full px-5 font-bold"
+          className="glow-btn min-h-[44px] rounded-lg px-5 font-bold"
         >
           Generate strategy report
         </button>
@@ -108,7 +108,7 @@ export function EcosystemBuilder() {
         <div key={reportKey} className="grid gap-3 rounded-2xl border border-line bg-bg/40 p-5">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-bold uppercase tracking-wider text-text-3">Partnership strength</h4>
-            <span className="font-mono text-3xl font-extrabold text-brand-green">{result.score}%</span>
+            <span className="font-mono text-3xl font-extrabold text-text">{result.score}%</span>
           </div>
           {result.warnings.length > 0 ? (
             <ul className="grid gap-2">

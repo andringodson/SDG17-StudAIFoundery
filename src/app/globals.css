@@ -1,11 +1,15 @@
 @import 'tailwindcss';
 
 /* ---------------------------------------------------------------------------
-   Design tokens — Tailwind v4 CSS-first theme. Same palette family as the
-   spec: SDG deep blue/royal blue brand, cyan/green accents, a reserved
-   status quartet. Categorical chart colours are a SEPARATE validated set
-   (see components/charts) because five brand-adjacent hues fail
-   colour-vision separation as adjacent data marks.
+   Design tokens — Tailwind v4 CSS-first theme.
+
+   Visual language: near-black canvas, near-white type, restrained monochrome
+   chrome (metacci.com is the reference — pure grayscale, thin 1px borders,
+   one solid button, no gradients/glow on interactive surfaces). Colour is
+   reserved for two things that carry real meaning, not decoration:
+     1. the status-bar quartet (blue/amber/red/green — required by spec)
+     2. chart series colours (validated for colour-vision separation)
+   The SDG brand blue survives only in the small logo mark.
    --------------------------------------------------------------------------- */
 @theme {
   --color-brand-deep: #0a3a60;
@@ -13,16 +17,16 @@
   --color-brand-cyan: #00aed6;
   --color-brand-green: #2ec4b6;
 
-  --color-bg: #051524;
-  --color-surface-1: #0b1f33;
-  --color-surface-2: #0f2942;
-  --color-surface-3: #14344f;
-  --color-line: rgb(148 194 236 / 0.16);
-  --color-line-strong: rgb(148 194 236 / 0.30);
+  --color-bg: #08090a;
+  --color-surface-1: #0e0f10;
+  --color-surface-2: #141516;
+  --color-surface-3: #1c1d1e;
+  --color-line: rgb(255 255 255 / 0.12);
+  --color-line-strong: rgb(255 255 255 / 0.24);
 
-  --color-text: #eaf3fb;
-  --color-text-2: #a9c4dc;
-  --color-text-3: #7c9dba;
+  --color-text: #ececee;
+  --color-text-2: #b4b4b8;
+  --color-text-3: #7a7a80;
 
   --color-status-normal: #1f69b3;
   --color-status-warn: #ffb703;
@@ -35,7 +39,7 @@
   --color-series-4: #c98500;
   --color-series-5: #d55181;
 
-  --font-sans: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
 }
 
@@ -47,9 +51,8 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
-  background-image:
-    radial-gradient(900px 520px at 12% -8%, rgb(31 105 179 / 0.24), transparent 62%),
-    radial-gradient(760px 460px at 92% 4%, rgb(0 174 214 / 0.16), transparent 60%);
+  /* A single, faint neutral glow for depth — no colour tint. */
+  background-image: radial-gradient(1100px 620px at 50% -12%, rgb(255 255 255 / 0.05), transparent 60%);
   background-attachment: fixed;
 }
 
@@ -62,7 +65,7 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-brand-cyan);
+  outline: 2px solid var(--color-text);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -85,10 +88,10 @@ body {
   inset-block-start: -100%;
   z-index: 200;
   padding: 0.7rem 1.1rem;
-  background: var(--color-brand-cyan);
-  color: #04212c;
+  background: var(--color-text);
+  color: #08090a;
   font-weight: 700;
-  border-radius: 9px;
+  border-radius: 8px;
   transition: inset-block-start 0.18s ease;
 }
 .skiplink:focus {
@@ -118,60 +121,44 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
-   Glow / shine primary button — uiverse.io-style gradient border with a
-   sweeping highlight on hover, restrained to match the SDG brand palette
-   rather than the neon versions that style of component usually ships with.
+   Primary button — solid, flat, monochrome. No gradient, no glow: the whole
+   point of this treatment is that it reads as one confident, restrained
+   action rather than a decorated one.
    --------------------------------------------------------------------------- */
 .glow-btn {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  background: linear-gradient(135deg, var(--color-brand-cyan), var(--color-brand-royal));
-  color: #04212c;
-  box-shadow: 0 0 0 rgb(0 174 214 / 0);
-  transition: box-shadow 0.28s ease, transform 0.18s ease;
-}
-.glow-btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(115deg, transparent 20%, rgb(255 255 255 / 0.55) 40%, transparent 60%);
-  transform: translateX(-120%);
-  transition: transform 0.6s ease;
+  background: var(--color-text);
+  color: #08090a;
+  transition: opacity 0.18s ease, transform 0.18s ease;
 }
 .glow-btn:hover {
-  box-shadow: 0 0 26px rgb(0 174 214 / 0.45), 0 0 4px rgb(46 196 182 / 0.4);
+  opacity: 0.85;
   transform: translateY(-1px);
-}
-.glow-btn:hover::before {
-  transform: translateX(120%);
 }
 .glow-btn:active {
   transform: translateY(0);
 }
 .glow-btn:disabled {
-  opacity: 0.4;
-  box-shadow: none;
+  opacity: 0.35;
   transform: none;
   cursor: not-allowed;
 }
 
-/* Lift-and-glow card hover, used for pillar/stakeholder/pick cards. */
+/* Card hover: a small lift and a brighter border — no colour, no glow. */
 .glow-card {
-  transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
 }
 .glow-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   border-color: var(--color-line-strong);
-  box-shadow: 0 14px 32px rgb(2 10 20 / 0.4), 0 0 0 1px rgb(0 174 214 / 0.12);
 }
 .glow-card[data-active='true'] {
-  border-color: var(--color-brand-cyan);
-  box-shadow: 0 0 0 1px var(--color-brand-cyan), 0 0 22px rgb(0 174 214 / 0.28);
+  border-color: var(--color-text);
+  background: rgb(255 255 255 / 0.06);
 }
 
-/* Logo mark: static by default; the loading screen adds a slow node pulse. */
+/* Logo mark: static by default; the loading screen adds a slow node pulse.
+   This stays in brand blue/cyan/green on purpose — it is the one place the
+   SDG identity is allowed to show colour. */
 .logo-mark__node {
   transform-origin: center;
   transform-box: fill-box;
@@ -197,14 +184,16 @@ body {
   100% { transform: translateX(400%); }
 }
 
-/* Numbered badge — nbnzia/metacci-style stat and step markers. */
+/* Numbered marker — plain typography, no filled badge. Matches metacci's
+   restraint: numbers are set in type, not decorated as icons. */
 .num-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-mono);
-  font-weight: 800;
+  font-weight: 600;
+  color: var(--color-text-3);
+  border: 1px solid var(--color-line-strong);
   border-radius: 9999px;
-  background: linear-gradient(135deg, var(--color-brand-cyan), var(--color-brand-royal));
-  color: #04212c;
+  background: transparent;
 }

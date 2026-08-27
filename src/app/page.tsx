@@ -22,21 +22,18 @@ export default function HomePage() {
           <span className="num-badge h-9 w-9 text-lg">17</span>
           United Nations Sustainable Development Goal
         </p>
-        <h1 className="max-w-[18ch] text-5xl font-extrabold leading-[1.05] tracking-tight sm:text-7xl">
-          Global challenges require{' '}
-          <em className="bg-gradient-to-r from-brand-cyan to-brand-green bg-clip-text not-italic text-transparent">
-            global partnerships.
-          </em>
+        <h1 className="max-w-[18ch] text-5xl font-medium leading-[1.05] tracking-tight text-text sm:text-7xl">
+          Global challenges require global partnerships.
         </h1>
         <p className="max-w-[62ch] text-lg text-text-2 sm:text-xl">
           Explore how collaboration in finance, technology, skills, trade, and policy can accelerate sustainable development.
           All figures in Indian Rupees.
         </p>
         <div className="flex flex-wrap gap-3">
-          <a href="#finance" className="glow-btn min-h-[52px] rounded-full px-6 text-lg font-bold">
+          <a href="#finance" className="glow-btn min-h-[52px] rounded-lg px-6 text-lg font-bold">
             Explore SDG 17
           </a>
-          <a href="#builder" className="flex min-h-[52px] items-center rounded-full border border-line-strong px-6 text-lg font-bold text-text">
+          <a href="#builder" className="flex min-h-[52px] items-center rounded-lg border border-line-strong px-6 text-lg font-medium text-text transition hover:border-text hover:bg-white/5">
             Build a partnership
           </a>
         </div>
@@ -104,8 +101,8 @@ export default function HomePage() {
 function Section({ id, eyebrow, title, children }: { id: string; eyebrow: string; title: string; children: React.ReactNode }) {
   return (
     <section id={id} className="scroll-mt-20 py-14 sm:py-20">
-      <p className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-brand-cyan">{eyebrow}</p>
-      <h2 className="mb-6 text-3xl font-extrabold tracking-tight sm:text-4xl">{title}</h2>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-text-3">{eyebrow}</p>
+      <h2 className="mb-6 text-3xl font-medium tracking-tight sm:text-4xl">{title}</h2>
       {children}
     </section>
   );

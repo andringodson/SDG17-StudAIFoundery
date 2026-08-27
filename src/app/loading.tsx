@@ -15,7 +15,7 @@ export default function Loading() {
           <p className="text-sm text-text-3">Loading the hub…</p>
         </div>
         <div className="h-1.5 w-48 overflow-hidden rounded-full bg-white/10" role="status" aria-label="Loading">
-          <span className="loading-sweep block h-full w-1/3 rounded-full bg-gradient-to-r from-brand-cyan to-brand-green" />
+          <span className="loading-sweep block h-full w-1/3 rounded-full bg-gradient-to-r from-white/50 to-white" />
         </div>
         <p className="text-xs text-text-3/70">A Project by Error404</p>
       </div>

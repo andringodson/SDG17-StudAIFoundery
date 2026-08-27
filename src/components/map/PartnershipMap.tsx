@@ -48,8 +48,8 @@ export function PartnershipMap() {
                 <polygon
                   key={mass.id}
                   points={mass.points.map(([lon, lat]) => { const p = project(lon, lat); return `${p.x.toFixed(1)},${p.y.toFixed(1)}`; }).join(' ')}
-                  fill="rgb(31 105 179 / 0.20)"
-                  stroke="rgb(112 172 226 / 0.34)"
+                  fill="rgb(255 255 255 / 0.06)"
+                  stroke="rgb(255 255 255 / 0.16)"
                   strokeWidth={1}
                 />
               ))}
@@ -70,7 +70,7 @@ export function PartnershipMap() {
                     key={i}
                     d={`M${p.x} ${p.y} Q${mx} ${my} ${q.x} ${q.y}`}
                     fill="none"
-                    stroke="var(--color-brand-cyan)"
+                    stroke="#ffffff"
                     strokeWidth={1.4}
                     strokeDasharray="5 9"
                     opacity={dimmed ? 0.05 : 0.3}
@@ -97,11 +97,11 @@ export function PartnershipMap() {
                     onKeyDown={(e) => { if (!dimmed && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setSelected(region.id); } }}
                     style={{ cursor: dimmed ? 'default' : 'pointer', opacity: dimmed ? 0.22 : 1 }}
                   >
-                    <circle cx={p.x} cy={p.y} r={r + 12} fill="var(--color-brand-cyan)" opacity={isSel ? 0.32 : 0.09} />
+                    <circle cx={p.x} cy={p.y} r={r + 12} fill="#ffffff" opacity={isSel ? 0.16 : 0.05} />
                     <circle
                       cx={p.x} cy={p.y} r={r}
                       fill={`var(--seq-${step}, var(--color-brand-royal))`}
-                      stroke={isSel ? 'var(--color-brand-cyan)' : 'rgb(6 20 34 / 0.85)'}
+                      stroke={isSel ? '#ffffff' : 'rgb(8 9 10 / 0.85)'}
                       strokeWidth={isSel ? 3 : 2}
                       style={{ ['--seq-1' as string]: '#12406e', ['--seq-2' as string]: '#1a5fa0', ['--seq-3' as string]: '#2a78d6', ['--seq-4' as string]: '#5b9ae8', ['--seq-5' as string]: '#8fbcf2' }}
                     />
@@ -130,7 +130,7 @@ export function PartnershipMap() {
           <aside className="glow-card min-w-[18rem] flex-1 rounded-3xl border border-line bg-surface-1/80 p-5" aria-label="Regional profile">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-brand-cyan">Regional profile</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-text-3">Regional profile</p>
                 <h3 className="text-2xl font-extrabold">{activeRegion.name}</h3>
               </div>
               <button
@@ -152,7 +152,7 @@ export function PartnershipMap() {
             <h4 className="mb-2 mt-4 text-xs font-bold uppercase tracking-wider text-text-3">Partner organisations</h4>
             <ul className="grid gap-1">
               {activeRegion.orgs.map((o) => (
-                <li key={o} className="rounded-r border-l-2 border-brand-royal bg-bg/40 px-3 py-1.5 text-sm text-text-2">
+                <li key={o} className="rounded-r border-l-2 border-white/25 bg-bg/40 px-3 py-1.5 text-sm text-text-2">
                   {o}
                 </li>
               ))}
@@ -171,7 +171,7 @@ function FilterChip({ label, active, onClick }: { label: string; active: boolean
       onClick={onClick}
       aria-pressed={active}
       className={`min-h-[40px] rounded-full border px-3 text-sm font-semibold transition ${
-        active ? 'border-brand-cyan bg-brand-cyan/15 text-white' : 'border-line bg-surface-3 text-text-2 hover:border-line-strong'
+        active ? 'border-text bg-white/10 text-text' : 'border-line bg-surface-3 text-text-2 hover:border-line-strong'
       }`}
     >
       {label}

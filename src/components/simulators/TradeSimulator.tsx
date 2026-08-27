@@ -54,7 +54,7 @@ export function TradeSimulator() {
         <ScoreBar label="Economic growth" value={result.growthScore} color="var(--color-series-1)" />
         <ScoreBar label="Job creation" value={result.jobsScore} color="var(--color-series-3)" />
         <ScoreBar label="Sustainability" value={result.sustainabilityScore} color="var(--color-series-4)" />
-        <p className="mt-2 rounded-xl border-l-2 border-brand-cyan bg-brand-cyan/10 px-4 py-3 text-sm text-text-2">
+        <p className="mt-2 rounded-xl border-l-2 border-text/40 bg-white/5 px-4 py-3 text-sm text-text-2">
           {verdict(result)}
         </p>
       </div>
@@ -101,7 +101,7 @@ function Slider({
         <label htmlFor={id} className="text-sm font-semibold">
           {label}
         </label>
-        <span className="font-mono text-sm font-bold text-brand-cyan">{format(value)}</span>
+        <span className="font-mono text-sm font-bold text-text">{format(value)}</span>
       </div>
       <input
         id={id}
@@ -111,7 +111,7 @@ function Slider({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-1 h-2 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-brand-cyan"
+        className="mt-1 h-2 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-white"
         aria-describedby={`${id}-hint`}
       />
       <p id={`${id}-hint`} className="mt-1 text-xs text-text-3">

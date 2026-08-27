@@ -42,7 +42,7 @@ export function CapacitySimulator() {
             onClick={() => selectRole(id)}
             aria-pressed={roleId === id}
             className={`min-h-[40px] rounded-full border px-3 text-sm font-semibold transition ${
-              roleId === id ? 'border-brand-cyan bg-brand-cyan/15 text-white' : 'border-line bg-surface-3 text-text-2'
+              roleId === id ? 'border-text bg-white/10 text-text' : 'border-line bg-surface-3 text-text-2'
             }`}
           >
             {ROLES[id].icon} {ROLES[id].name}
@@ -83,7 +83,7 @@ export function CapacitySimulator() {
           type="button"
           onClick={() => window.print()}
           disabled={!allDone}
-          className="glow-btn min-h-[44px] rounded-full px-5 font-bold disabled:opacity-40"
+          className="glow-btn min-h-[44px] rounded-lg px-5 font-bold disabled:opacity-40"
         >
           Print certificate
         </button>

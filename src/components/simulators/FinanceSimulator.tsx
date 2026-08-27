@@ -94,7 +94,7 @@ export function FinanceSimulator() {
               key={Math.round(budget / 1000)}
               initial={{ opacity: 0.4, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="font-mono text-3xl font-extrabold text-brand-green"
+              className="font-mono text-3xl font-bold text-text"
             >
               {formatINRShort(budget)}
             </motion.output>
@@ -109,7 +109,7 @@ export function FinanceSimulator() {
           max={1000}
           value={pos}
           onChange={(e) => setPos(Number(e.target.value))}
-          className="h-2 w-full cursor-pointer appearance-none rounded-full bg-gradient-to-r from-brand-royal via-brand-cyan to-brand-green accent-brand-cyan"
+          className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-gradient-to-r from-white/15 to-white/45 accent-white"
           aria-describedby="budget-help"
         />
         <div className="flex justify-between font-mono text-[0.7rem] text-text-3" aria-hidden="true">
@@ -137,8 +137,8 @@ export function FinanceSimulator() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Kpi label="Projects supported" value={formatCount(result.projects)} accent="border-t-brand-cyan" />
-        <Kpi label="Communities reached" value={formatCount(result.communities)} accent="border-t-brand-green" />
+        <Kpi label="Projects supported" value={formatCount(result.projects)} accent="border-t-white/25" />
+        <Kpi label="Communities reached" value={formatCount(result.communities)} accent="border-t-white/25" />
         <Kpi label="Impact score" value={`${result.impact}%`} accent="border-t-status-warn" />
       </div>
 
@@ -153,7 +153,7 @@ export function FinanceSimulator() {
               </Pie>
               <Tooltip
                 formatter={(value: number, name: string) => [formatINR(value), name]}
-                contentStyle={{ background: '#0b1f33', border: '1px solid rgba(148,194,236,0.3)', borderRadius: 10 }}
+                contentStyle={{ background: '#141516', border: '1px solid rgba(255,255,255,0.24)', borderRadius: 10 }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -173,7 +173,7 @@ export function FinanceSimulator() {
         <button
           type="button"
           onClick={runProjection}
-          className="glow-btn min-h-[44px] rounded-full px-5 font-bold"
+          className="glow-btn min-h-[44px] rounded-lg px-5 font-bold"
         >
           Run full projection
         </button>

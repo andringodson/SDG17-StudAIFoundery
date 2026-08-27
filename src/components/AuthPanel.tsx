@@ -112,7 +112,7 @@ export function AuthPanel() {
               placeholder="6-digit code"
               className="min-h-[40px] w-32 rounded-xl border border-line bg-bg/60 px-3 font-mono"
             />
-            <button type="button" onClick={verifyOtp} className="glow-btn min-h-[40px] rounded-full px-4 text-sm font-bold">
+            <button type="button" onClick={verifyOtp} className="glow-btn min-h-[40px] rounded-lg px-4 text-sm font-bold">
               Verify
             </button>
           </div>
@@ -160,7 +160,7 @@ export function AuthPanel() {
           className="min-h-[44px] rounded-xl border border-line bg-bg/60 px-3"
         />
         {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
-        <button type="submit" disabled={busy} className="glow-btn min-h-[44px] rounded-full px-5 font-bold disabled:opacity-40">
+        <button type="submit" disabled={busy} className="glow-btn min-h-[44px] rounded-lg px-5 font-bold disabled:opacity-40">
           {mode === 'login' ? 'Sign in' : 'Create account'}
         </button>
       </form>
@@ -174,7 +174,7 @@ function TabButton({ active, onClick, label }: { active: boolean; onClick: () =>
       type="button"
       onClick={onClick}
       className={`min-h-[40px] flex-1 rounded-full border text-sm font-semibold transition ${
-        active ? 'border-brand-cyan bg-brand-cyan/15 text-white' : 'border-line text-text-2'
+        active ? 'border-text bg-white/10 text-text' : 'border-line text-text-2'
       }`}
     >
       {label}

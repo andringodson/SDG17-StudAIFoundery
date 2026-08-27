@@ -89,7 +89,7 @@ export function LivePoll() {
             onClick={() => vote(p.id)}
             aria-pressed={myVote === p.id}
             className={`min-h-[40px] rounded-full border px-3 text-sm font-semibold transition ${
-              myVote === p.id ? 'border-brand-cyan bg-brand-cyan/15 text-white' : 'border-line bg-surface-3 text-text-2'
+              myVote === p.id ? 'border-text bg-white/10 text-text' : 'border-line bg-surface-3 text-text-2'
             }`}
           >
             {p.icon} {p.name}
