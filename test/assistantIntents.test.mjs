@@ -82,3 +82,28 @@ test('the broad SDG 17 overview still answers a genuinely broad question', () =>
   const answer = findSupportKnowledge('what are the five pillars of SDG 17');
   assert.match(answer.text, /organises its targets into five pillars/i);
 });
+
+test('ordinary conversation is handled, not answered with a capability pitch', () => {
+  // Regression: "shut up" / "thanks" / "ok" all fell through to the catch-all,
+  // which recited what the assistant can do — so being told to stop produced
+  // another sales pitch.
+  assert.equal(classifyIntent('shut up').name, 'dismissal');
+  assert.equal(classifyIntent('never mind').name, 'dismissal');
+  assert.equal(classifyIntent('thanks').name, 'thanks');
+  assert.equal(classifyIntent('bye').name, 'farewell');
+  assert.equal(classifyIntent('ok').name, 'acknowledgement');
+  assert.equal(classifyIntent('what can you do').name, 'capabilities');
+});
+
+test('anger is read as frustration rather than an unknown question', () => {
+  assert.equal(classifyIntent('this is so dumb').name, 'frustration');
+  assert.equal(classifyIntent('stupid assistant').name, 'frustration');
+});
+
+test('a real question is still classified over the conversational patterns', () => {
+  // The conversational patterns run first, so guard that they are narrow
+  // enough not to swallow genuine questions.
+  assert.equal(classifyIntent('explain sdg 17').name, 'explain_sdg17');
+  assert.equal(classifyIntent('show my points').name, 'progress');
+  assert.equal(classifyIntent('how does this platform work').name, 'how_platform_works');
+});

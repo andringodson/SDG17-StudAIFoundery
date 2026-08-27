@@ -69,7 +69,27 @@ export async function POST(req: NextRequest) {
     switch (intent.name) {
       case 'greeting':
         return respond({
-          text: `${prefix}Hello! I’m the Stud AI Assistant. I can help you use the platform, understand SDG 17, build a partnership strategy, or look up your own progress and pledges.`,
+          text: `${prefix}Hello. What would you like to know?`,
+          suggestions: suggestionsFor(role)
+        });
+
+      case 'dismissal':
+        // No suggestions, no pitch — being asked to stop and then answering
+        // with three more prompts is exactly what makes an assistant grating.
+        return respond({ text: 'Understood — I’ll stop there. Close this panel any time with the ✕, or Escape.' });
+
+      case 'thanks':
+        return respond({ text: 'You’re welcome.' });
+
+      case 'farewell':
+        return respond({ text: 'Goodbye.' });
+
+      case 'acknowledgement':
+        return respond({ text: 'Anything else?' });
+
+      case 'capabilities':
+        return respond({
+          text: `${prefix}I can look things up on this platform: how the simulators and the map work, what SDG 17 and its five pillars cover, and — once you're signed in — your own points, badges, pledges, and reminders.\n\nI match on keywords rather than reading freely, so short, direct questions work best. If I can't answer, I'll say so instead of guessing.`,
           suggestions: suggestionsFor(role)
         });
 
@@ -189,9 +209,10 @@ export async function POST(req: NextRequest) {
           if (llm) return respond({ text: `${prefix}${llm.text}`, suggestions: ['Explain SDG 17', 'How does this platform work?', 'I need more help'], disclaimer: llm.usedDisclaimer });
         }
 
+        // Says what it doesn't know and offers a human, rather than reciting
+        // the same capability list at every dead end.
         return respond({
-          text: `${prefix}I couldn’t find a clear answer to that question. I can help with platform navigation, SDG 17, the Partnership Builder, or your own points and pledges.`,
-          suggestions: suggestionsFor(role),
+          text: `${prefix}I don’t have an answer for that one — I only cover this platform and SDG 17, and I match on keywords rather than reading freely, so I miss a lot.\n\nTry rephrasing it more directly, or send it to a person who can actually help.`,
           escalate: true
         });
       }
