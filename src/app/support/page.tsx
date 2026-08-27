@@ -55,11 +55,18 @@ export default function SupportPage() {
         </label>
         <label className="flex gap-2 text-sm text-text-2"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} /> I consent to being contacted about this request.</label>
         {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
+        {/* Whether a confirmation actually sent is worth telling the person,
+            because it changes what they should do next (save the reference vs.
+            watch their inbox). WHY it didn't send is not — that is our
+            infrastructure state, not theirs, and it was previously spelled out
+            on this public page. */}
         {result && (
           <p role="status" className="rounded-lg border border-status-complete/40 bg-status-complete/10 p-3 text-sm text-text">
-            Request received and logged for review. Reference: <strong>{result.reference}</strong>. Status: {result.status}.
-            {consent && email && (result.confirmationDelivered ? ' A confirmation email was sent.' : ' Email delivery is not configured on this deployment yet — keep this reference to check status.')}
-            {consent && phone && (result.smsDelivered ? ' A confirmation text was sent.' : ' SMS delivery is not configured on this deployment yet.')}
+            Thanks — your report has been received and passed to the team that
+            handles it. Your reference is <strong>{result.reference}</strong>.
+            {result.confirmationDelivered || result.smsDelivered
+              ? ' A confirmation is on its way to you.'
+              : ' Please save this reference — you can use it to check the status of your report at any time.'}
           </p>
         )}
         <button disabled={busy} className="glow-btn min-h-[44px] rounded-lg font-semibold disabled:opacity-40">{busy ? 'Sending…' : 'Create support request'}</button>

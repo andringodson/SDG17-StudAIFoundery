@@ -23,7 +23,7 @@ export default function LoginPage() {
 }
 
 const OAUTH_ERROR: Record<string, string> = {
-  not_configured: 'That sign-in method is not set up on this deployment yet.',
+  not_configured: 'That sign-in method is not available yet. Please use your email and password.',
   invalid_state: 'That sign-in attempt could not be verified. Please try again.',
   exchange_failed: 'Sign-in with that provider failed. Please try again or use your email and password.'
 };
@@ -124,41 +124,30 @@ function LoginInner() {
         </button>
       </form>
 
-      <div className="my-6 flex items-center gap-3 text-xs text-text-3">
-        <span className="h-px flex-1 bg-line" /> OR <span className="h-px flex-1 bg-line" />
-      </div>
+      {/* Shown only once a provider is genuinely live. A greyed-out button
+          reading "requires site setup" tells a visitor nothing they can act
+          on and makes a working page look broken — better to offer only what
+          exists. /api/auth/oauth/status reports which are configured. */}
+      {(social.google || social.facebook) && (
+        <>
+          <div className="my-6 flex items-center gap-3 text-xs text-text-3">
+            <span className="h-px flex-1 bg-line" /> OR <span className="h-px flex-1 bg-line" />
+          </div>
 
-      <div className="grid gap-2">
-        {social.google ? (
-          <a href="/api/auth/oauth/google" className="flex min-h-[44px] items-center justify-center rounded-lg border border-line text-sm font-semibold hover:bg-white/5">
-            Continue with Google
-          </a>
-        ) : (
-          <button
-            type="button" disabled aria-disabled
-            title="Google sign-in needs a Google OAuth app registered by the site owner — not yet configured."
-            className="flex min-h-[44px] items-center justify-center rounded-lg border border-line text-sm font-semibold text-text-3 opacity-50"
-          >
-            Continue with Google (requires site setup)
-          </button>
-        )}
-        {social.facebook ? (
-          <a href="/api/auth/oauth/facebook" className="flex min-h-[44px] items-center justify-center rounded-lg border border-line text-sm font-semibold hover:bg-white/5">
-            Continue with Facebook
-          </a>
-        ) : (
-          <button
-            type="button" disabled aria-disabled
-            title="Facebook sign-in needs a Meta OAuth app registered by the site owner — not yet configured."
-            className="flex min-h-[44px] items-center justify-center rounded-lg border border-line text-sm font-semibold text-text-3 opacity-50"
-          >
-            Continue with Facebook (requires site setup)
-          </button>
-        )}
-        {!social.google && !social.facebook && (
-          <p className="text-center text-xs text-text-3">Social sign-in is shown only as unavailable until the required Google or Meta OAuth credentials are configured securely.</p>
-        )}
-      </div>
+          <div className="grid gap-2">
+            {social.google && (
+              <a href="/api/auth/oauth/google" className="flex min-h-[44px] items-center justify-center rounded-lg border border-line text-sm font-semibold hover:bg-white/5">
+                Continue with Google
+              </a>
+            )}
+            {social.facebook && (
+              <a href="/api/auth/oauth/facebook" className="flex min-h-[44px] items-center justify-center rounded-lg border border-line text-sm font-semibold hover:bg-white/5">
+                Continue with Facebook
+              </a>
+            )}
+          </div>
+        </>
+      )}
 
       <p className="mt-6 text-center text-sm text-text-3">
         Don&apos;t have an account? <Link href="/auth/register" className="font-semibold text-text underline">Create Account</Link>
