@@ -1,9 +1,16 @@
 'use client';
 
 /**
- * The Foundery Mark: two open forms lock into a third shared centre. It is a
- * compact original symbol for independent partners making something together.
- * The mark holds up at favicon size and has no reliance on stock SDG imagery.
+ * The mark: two thin rings interlocking, with their shared overlap picked out
+ * in the SDG accent. It is the oldest, plainest visual idea for partnership —
+ * two independent parties and the ground they hold in common — drawn in a
+ * single hairline weight so it reads as a wordmark's companion rather than an
+ * app-store icon.
+ *
+ * Deliberately no rounded-square container plate: that device is what made the
+ * previous mark read as generic product chrome. Two open rings on the page
+ * are quieter, scale down to a favicon without turning to mud, and stay
+ * legible in one colour if it ever has to print.
  */
 export function LogoMark({ size = 34, animated = false }: { size?: number; animated?: boolean }) {
   return (
@@ -15,17 +22,18 @@ export function LogoMark({ size = 34, animated = false }: { size?: number; anima
       aria-hidden="true"
       className={animated ? 'logo-mark logo-mark--animated' : 'logo-mark'}
     >
-      <rect x="0.5" y="0.5" width="39" height="39" rx="11" fill="#07151d" stroke="#43d6f2" strokeOpacity="0.6" />
-      <g
-        className="logo-mark__glyph"
-        stroke="#dff9ff"
-        strokeWidth="2.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M9 13.5 L15.4 9.5 L21.8 13.5 L21.8 20.8 L15.4 24.7 L9 20.8 Z" />
-        <path d="M18.2 19.2 L24.6 15.3 L31 19.2 L31 26.5 L24.6 30.5 L18.2 26.5 Z" />
-        <path d="M18.2 20 L21.8 20" stroke="#43d6f2" />
+      <defs>
+        {/* The lens where the two rings overlap — the "shared ground". */}
+        <clipPath id="logo-lens">
+          <circle cx="15.4" cy="20" r="9.4" />
+        </clipPath>
+      </defs>
+
+      <circle cx="24.6" cy="20" r="9.4" fill="#43d6f2" fillOpacity="0.18" clipPath="url(#logo-lens)" />
+
+      <g className="logo-mark__glyph" strokeWidth="1.7" strokeLinecap="round">
+        <circle cx="15.4" cy="20" r="9.4" stroke="#dff9ff" />
+        <circle cx="24.6" cy="20" r="9.4" stroke="#43d6f2" />
       </g>
     </svg>
   );
