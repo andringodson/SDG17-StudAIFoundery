@@ -149,6 +149,28 @@ Verified in `test/formulas.test.mjs` — e.g. ₹10 Crore → 250 projects, 50,0
 - Port exposed for both the HTTP health check and the WebSocket upgrade (same port, `/live` path)
 - The bot uses long polling, so no inbound webhook configuration is required
 
+### Railway deployment (recommended)
+
+The repository includes `server/Dockerfile` and `server/railway.json` for a
+repeatable Railway deployment. Create a Railway service from this GitHub
+repository, set its **root directory** to `server`, and set these variables in
+Railway (never commit them):
+
+```text
+DATABASE_URL
+TELEGRAM_BOT_TOKEN
+WEB_APP_URL=https://sdg17-studaifoundery.vercel.app
+INTERNAL_SHARED_SECRET
+```
+
+Railway supplies `PORT` automatically. Once it produces a public HTTPS URL,
+set the following Vercel Production variables and redeploy the web app:
+
+```text
+WS_SERVER_INTERNAL_URL=https://<railway-service-url>
+NEXT_PUBLIC_WS_URL=wss://<railway-service-url>/live
+```
+
 ---
 
 ## Accessibility
