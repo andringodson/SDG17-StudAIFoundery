@@ -34,8 +34,15 @@ export function InteractiveBackground() {
     const pointer = { x: -9999, y: -9999, active: false };
 
     interface Particle {
-      x: number; y: number; vx: number; vy: number; r: number;
+      x: number; y: number; vx: number; vy: number; r: number; color: readonly [number, number, number];
     }
+
+    const PALETTE = [
+      [82, 205, 255],
+      [139, 130, 246],
+      [57, 220, 185],
+      [244, 139, 190]
+    ] as const;
 
     function resize() {
       width = window.innerWidth;
@@ -47,12 +54,13 @@ export function InteractiveBackground() {
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       const count = Math.max(28, Math.min(90, Math.round((width * height) / 22000)));
-      particles = Array.from({ length: count }, () => ({
+      particles = Array.from({ length: count }, (_, index) => ({
         x: Math.random() * width,
         y: Math.random() * height,
         vx: (Math.random() - 0.5) * 0.18,
         vy: (Math.random() - 0.5) * 0.18,
-        r: Math.random() * 1.4 + 0.6
+        r: Math.random() * 1.4 + 0.6,
+        color: PALETTE[index % PALETTE.length]!
       }));
     }
 
@@ -86,7 +94,13 @@ export function InteractiveBackground() {
           const a = particles[i]!, b = particles[j]!;
           const dist = Math.hypot(a.x - b.x, a.y - b.y);
           if (dist < LINK_DIST) {
-            ctx!.strokeStyle = `rgba(255,255,255,${0.14 * (1 - dist / LINK_DIST)})`;
+            const strength = 1 - dist / LINK_DIST;
+            const gradient = ctx!.createLinearGradient(a.x, a.y, b.x, b.y);
+            gradient.addColorStop(0, `rgba(${a.color.join(',')},${0.22 * strength})`);
+            gradient.addColorStop(1, `rgba(${b.color.join(',')},${0.22 * strength})`);
+            ctx!.strokeStyle = gradient;
+            ctx!.shadowBlur = 7 * strength;
+            ctx!.shadowColor = `rgba(${a.color.join(',')},${0.28 * strength})`;
             ctx!.beginPath();
             ctx!.moveTo(a.x, a.y);
             ctx!.lineTo(b.x, b.y);
@@ -98,7 +112,11 @@ export function InteractiveBackground() {
           const dy = particles[i]!.y - pointer.y;
           const dist = Math.hypot(dx, dy);
           if (dist < POINTER_DIST) {
-            ctx!.strokeStyle = `rgba(255,255,255,${0.3 * (1 - dist / POINTER_DIST)})`;
+            const strength = 1 - dist / POINTER_DIST;
+            const [r, g, b] = particles[i]!.color;
+            ctx!.strokeStyle = `rgba(${r},${g},${b},${0.42 * strength})`;
+            ctx!.shadowBlur = 12 * strength;
+            ctx!.shadowColor = `rgba(${r},${g},${b},${0.5 * strength})`;
             ctx!.beginPath();
             ctx!.moveTo(particles[i]!.x, particles[i]!.y);
             ctx!.lineTo(pointer.x, pointer.y);
@@ -107,12 +125,16 @@ export function InteractiveBackground() {
         }
       }
 
-      ctx!.fillStyle = 'rgba(255,255,255,0.72)';
       for (const p of particles) {
+        const [r, g, b] = p.color;
+        ctx!.fillStyle = `rgba(${r},${g},${b},0.82)`;
+        ctx!.shadowBlur = 8;
+        ctx!.shadowColor = `rgba(${r},${g},${b},0.5)`;
         ctx!.beginPath();
         ctx!.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx!.fill();
       }
+      ctx!.shadowBlur = 0;
 
       if (!reduceMotion) raf = requestAnimationFrame(step);
     }

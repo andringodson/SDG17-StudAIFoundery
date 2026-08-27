@@ -126,21 +126,63 @@ body {
    action rather than a decorated one.
    --------------------------------------------------------------------------- */
 .glow-btn {
+  position: relative;
+  overflow: hidden;
   background: var(--color-text);
   color: #08090a;
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  isolation: isolate;
+  transition: opacity 0.2s ease, transform 0.22s cubic-bezier(.2, .8, .2, 1), box-shadow 0.22s ease;
+}
+.glow-btn::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  content: '';
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.75) 50%, transparent 70%);
+  transform: translateX(-130%);
+  transition: transform 0.55s ease;
 }
 .glow-btn:hover {
-  opacity: 0.85;
-  transform: translateY(-1px);
+  opacity: 0.96;
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 12px 28px rgb(255 255 255 / 0.2);
+}
+.glow-btn:hover::after {
+  transform: translateX(130%);
 }
 .glow-btn:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.99);
 }
 .glow-btn:disabled {
   opacity: 0.35;
   transform: none;
   cursor: not-allowed;
+}
+
+.interactive-outline {
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.22s ease, background-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s cubic-bezier(.2, .8, .2, 1);
+}
+.interactive-outline::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.12) 50%, transparent 70%);
+  transform: translateX(-130%);
+  transition: transform 0.55s ease;
+}
+.interactive-outline:hover {
+  border-color: var(--color-text);
+  background: rgb(255 255 255 / 0.06);
+  box-shadow: 0 10px 24px rgb(99 210 255 / 0.14);
+  transform: translateY(-2px);
+}
+.interactive-outline:hover::after {
+  transform: translateX(130%);
+}
+.interactive-outline:active {
+  transform: translateY(0) scale(0.99);
 }
 
 /* Card hover: a small lift and a brighter border — no colour, no glow. */

@@ -33,7 +33,7 @@ export default function HomePage() {
           <a href="#finance" className="glow-btn inline-flex min-h-[52px] items-center justify-center rounded-lg px-6 text-lg font-bold">
             Explore SDG 17
           </a>
-          <a href="#builder" className="inline-flex min-h-[52px] items-center justify-center rounded-lg border border-line-strong px-6 text-lg font-medium text-text transition hover:border-text hover:bg-white/5">
+          <a href="#builder" className="interactive-outline inline-flex min-h-[52px] items-center justify-center rounded-lg border border-line-strong px-6 text-lg font-medium text-text">
             Build a partnership
           </a>
         </div>
