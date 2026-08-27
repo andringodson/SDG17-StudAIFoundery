@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
+import { authErrorMessage } from '@/lib/authErrors';
 
 interface Me {
   userId: string;
   username: string;
+  role?: string;
 }
 
 export function AuthPanel() {
@@ -39,14 +41,12 @@ export function AuthPanel() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error === 'db_not_configured' || data.code === 'db_not_configured'
-          ? 'The database is not connected yet — this needs a Supabase/Postgres project set up in .env.local.'
-          : data.error ?? 'Something went wrong');
+        setError(authErrorMessage(data.code ?? data.error));
         return;
       }
       setMe(data.user);
     } catch {
-      setError('Could not reach the server.');
+      setError(authErrorMessage('network_error'));
     } finally {
       setBusy(false);
     }

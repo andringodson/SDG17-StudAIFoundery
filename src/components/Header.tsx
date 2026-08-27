@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Logo } from './Logo';
 
 const LINKS = [
@@ -14,6 +15,11 @@ const LINKS = [
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/me').then((r) => r.json()).then((d) => setSignedIn(Boolean(d.user))).catch(() => {});
+  }, []);
 
   return (
     <header className="sticky top-0 z-[90] border-b border-transparent bg-bg/70 backdrop-blur-md">
@@ -40,7 +46,7 @@ export function Header() {
         <nav
           id="primary-nav"
           className={`${open ? 'flex' : 'hidden'} absolute inset-x-0 top-16 z-[95] flex-col gap-1 border-b border-line p-4 shadow-2xl sm:static sm:z-auto sm:flex sm:flex-row sm:gap-1 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none`}
-          style={open ? { backgroundColor: '#051524' } : undefined}
+          style={open ? { backgroundColor: '#000000' } : undefined}
         >
           {LINKS.map((l) => (
             <a
@@ -52,6 +58,13 @@ export function Header() {
               {l.label}
             </a>
           ))}
+          <Link
+            href={signedIn ? '/dashboard' : '/auth'}
+            onClick={() => setOpen(false)}
+            className="rounded-lg border border-line-strong px-3 py-2 text-sm font-semibold text-text transition hover:bg-white/10"
+          >
+            {signedIn ? 'Dashboard' : 'Sign in'}
+          </Link>
         </nav>
       </div>
     </header>

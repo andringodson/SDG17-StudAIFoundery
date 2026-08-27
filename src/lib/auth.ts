@@ -5,9 +5,16 @@ import { cookies } from 'next/headers';
 const COOKIE_NAME = 'sdg17_session';
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
+export type UserRole = 'company' | 'investor' | 'general_user' | 'admin' | 'compliance_admin';
+
 export interface SessionPayload {
   userId: string;
   username: string;
+  role: UserRole;
+  /** Bumped on "log out of all devices" — tokens signed before the bump are
+   * still cryptographically valid but treated as stale by anything that
+   * checks it against the current DB value (see requireFreshSession). */
+  sessionVersion: number;
 }
 
 function secret(): string {

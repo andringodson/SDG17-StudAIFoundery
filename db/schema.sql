@@ -20,11 +20,22 @@ CREATE TABLE IF NOT EXISTS users (
     is_phone_verified BOOLEAN NOT NULL DEFAULT FALSE,
     otp_code VARCHAR(6),
     otp_expires_at TIMESTAMPTZ,
+    -- Role-based access. 'admin' / 'compliance_admin' exist as a destination
+    -- for future use but nothing provisions them yet — there is no admin
+    -- console in this build, so these roles have no extra privileges wired up.
+    role VARCHAR(20) NOT NULL DEFAULT 'general_user'
+        CHECK (role IN ('company', 'investor', 'general_user', 'admin', 'compliance_admin')),
+    full_name VARCHAR(120),
+    profile_completed_pct INT NOT NULL DEFAULT 0,
+    -- Bumping this invalidates every JWT issued before the bump — the
+    -- mechanism behind "log out of all devices" without a session table.
+    session_version INT NOT NULL DEFAULT 1,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users (telegram_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users (role);
 
 -- -----------------------------------------------------------------------------
 -- 2. Telegram deep-link tokens
@@ -71,6 +82,41 @@ CREATE TABLE IF NOT EXISTS pledges (
 CREATE INDEX IF NOT EXISTS idx_pledges_created_at ON pledges (created_at DESC);
 
 -- -----------------------------------------------------------------------------
+-- 4b. Role-specific profiles
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS company_profiles (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    company_name VARCHAR(160) NOT NULL,
+    website VARCHAR(255),
+    industry VARCHAR(80),
+    country VARCHAR(80),
+    city VARCHAR(80),
+    year_founded INT,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS investor_profiles (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    investor_type VARCHAR(60) NOT NULL,
+    organisation_name VARCHAR(160),
+    country VARCHAR(80),
+    preferred_sector VARCHAR(80),
+    preferred_stage VARCHAR(60),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- -----------------------------------------------------------------------------
+-- 4c. Password reset tokens
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    token VARCHAR(64) PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    consumed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- -----------------------------------------------------------------------------
 -- 5. Live audience poll votes
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS audience_votes (
@@ -87,6 +133,38 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_audience_votes_user ON audience_votes (user
     WHERE user_id IS NOT NULL;
 
 -- -----------------------------------------------------------------------------
+-- 6. AI assistant audit log
+-- Every tool call the assistant makes is recorded here, whether it succeeded,
+-- was denied, or failed — this is the accountability trail required before
+-- any "AI can act on the user's behalf" feature is trustworthy.
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS ai_audit_log (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    user_role VARCHAR(20),
+    tool_name VARCHAR(60) NOT NULL,
+    permission_decision VARCHAR(20) NOT NULL CHECK (permission_decision IN ('allowed', 'denied')),
+    confirmation_status VARCHAR(20) NOT NULL DEFAULT 'not_required'
+        CHECK (confirmation_status IN ('not_required', 'pending', 'confirmed', 'cancelled')),
+    result_status VARCHAR(20) NOT NULL CHECK (result_status IN ('success', 'error', 'denied')),
+    error_message TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_audit_log_user ON ai_audit_log (user_id, created_at DESC);
+
+-- The one write-capable tool implemented in this build: a simple reminder.
+-- Deliberately the least sensitive possible "action" tool — nothing is sent,
+-- messaged, or paid as a result of the assistant acting alone.
+CREATE TABLE IF NOT EXISTS ai_reminders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    note TEXT NOT NULL,
+    remind_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- -----------------------------------------------------------------------------
 -- Row-Level Security
 -- The app talks to Postgres with the service-role connection string from API
 -- routes only (never from the browser), so RLS here is a defense-in-depth
@@ -98,6 +176,11 @@ ALTER TABLE user_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pledges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audience_votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE telegram_link_tokens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE company_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE investor_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE password_reset_tokens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ai_audit_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ai_reminders ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
@@ -115,6 +198,21 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_tokens') THEN
         CREATE POLICY service_role_all_tokens ON telegram_link_tokens FOR ALL TO service_role USING (true) WITH CHECK (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_company_profiles') THEN
+        CREATE POLICY service_role_all_company_profiles ON company_profiles FOR ALL TO service_role USING (true) WITH CHECK (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_investor_profiles') THEN
+        CREATE POLICY service_role_all_investor_profiles ON investor_profiles FOR ALL TO service_role USING (true) WITH CHECK (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_reset_tokens') THEN
+        CREATE POLICY service_role_all_reset_tokens ON password_reset_tokens FOR ALL TO service_role USING (true) WITH CHECK (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_ai_audit_log') THEN
+        CREATE POLICY service_role_all_ai_audit_log ON ai_audit_log FOR ALL TO service_role USING (true) WITH CHECK (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_ai_reminders') THEN
+        CREATE POLICY service_role_all_ai_reminders ON ai_reminders FOR ALL TO service_role USING (true) WITH CHECK (true);
     END IF;
 END $$;
 

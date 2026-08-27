@@ -26,3 +26,24 @@ export async function sendOtpEmail(to: string, code: string): Promise<{ delivere
   });
   return { delivered: true };
 }
+
+export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<{ delivered: boolean }> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM || 'SDG 17 Hub <onboarding@resend.dev>';
+
+  if (!apiKey) {
+    // eslint-disable-next-line no-console
+    console.log(`[mailer:dev-fallback] Password reset link for ${to}: ${resetUrl}`);
+    return { delivered: false };
+  }
+
+  const resend = new Resend(apiKey);
+  await resend.emails.send({
+    from,
+    to,
+    subject: 'Reset your SDG 17 Hub password',
+    text: `Reset your password: ${resetUrl}\n\nThis link expires in 30 minutes. If you did not request this, you can ignore this email.`,
+    html: `<p><a href="${resetUrl}">Reset your password</a></p><p>This link expires in 30 minutes. If you did not request this, you can ignore this email.</p>`
+  });
+  return { delivered: true };
+}

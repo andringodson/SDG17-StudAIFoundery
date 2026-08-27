@@ -17,7 +17,7 @@
   --color-brand-cyan: #00aed6;
   --color-brand-green: #2ec4b6;
 
-  --color-bg: #08090a;
+  --color-bg: #000000;
   --color-surface-1: #0e0f10;
   --color-surface-2: #141516;
   --color-surface-3: #1c1d1e;
@@ -156,24 +156,20 @@ body {
   background: rgb(255 255 255 / 0.06);
 }
 
-/* Logo mark: static by default; the loading screen adds a slow node pulse.
-   This stays in brand blue/cyan/green on purpose — it is the one place the
-   SDG identity is allowed to show colour. */
-.logo-mark__node {
-  transform-origin: center;
-  transform-box: fill-box;
+/* Logo mark: static by default. The loading screen traces the glyph in as
+   if it were being drawn, then holds — a quieter cue than a colour pulse. */
+.logo-mark__glyph path {
+  stroke-dasharray: 40;
+  stroke-dashoffset: 0;
 }
-.logo-mark--animated .logo-mark__node--1 { animation: logoPulse 2.4s ease-in-out infinite; }
-.logo-mark--animated .logo-mark__node--2 { animation: logoPulse 2.4s ease-in-out infinite; animation-delay: 0.3s; }
-.logo-mark--animated .logo-mark__node--3 { animation: logoPulse 2.4s ease-in-out infinite; animation-delay: 0.6s; }
-.logo-mark--animated .logo-mark__web { animation: logoWebFade 2.4s ease-in-out infinite; }
-@keyframes logoPulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.22); opacity: 0.75; }
+.logo-mark--animated .logo-mark__glyph path {
+  animation: logoDraw 1.8s ease-in-out infinite;
 }
-@keyframes logoWebFade {
-  0%, 100% { opacity: 0.85; }
-  50% { opacity: 0.4; }
+.logo-mark--animated .logo-mark__glyph path:nth-child(2) { animation-delay: 0.15s; }
+.logo-mark--animated .logo-mark__glyph path:nth-child(3) { animation-delay: 0.3s; }
+@keyframes logoDraw {
+  0% { stroke-dashoffset: 40; opacity: 0.4; }
+  55%, 100% { stroke-dashoffset: 0; opacity: 1; }
 }
 
 .loading-sweep {
