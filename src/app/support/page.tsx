@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 
-type Result = { reference: string; status: string };
+type Result = { reference: string; status: string; confirmationDelivered: boolean };
 
 export default function SupportPage() {
   const [category, setCategory] = useState('technical');
@@ -50,7 +50,7 @@ export default function SupportPage() {
         </label>
         <label className="flex gap-2 text-sm text-text-2"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} /> I consent to being contacted about this request.</label>
         {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
-        {result && <p role="status" className="rounded-lg border border-status-complete/40 bg-status-complete/10 p-3 text-sm text-text">Request received. Reference: <strong>{result.reference}</strong>. Status: {result.status}.</p>}
+        {result && <p role="status" className="rounded-lg border border-status-complete/40 bg-status-complete/10 p-3 text-sm text-text">Request received. Reference: <strong>{result.reference}</strong>. Status: {result.status}.{consent && (result.confirmationDelivered ? ' A confirmation email was sent.' : ' Email delivery is not configured yet; keep this reference to check status.')}</p>}
         <button disabled={busy} className="glow-btn min-h-[44px] rounded-lg font-semibold disabled:opacity-40">{busy ? 'Sending…' : 'Create support request'}</button>
       </form>
       <aside className="h-fit rounded-2xl border border-line bg-surface-1/80 p-5"><h2 className="text-lg font-semibold">Check request status</h2><p className="mt-2 text-sm text-text-2">Use the reference from your submitted request.</p><form onSubmit={checkStatus} className="mt-4 grid gap-2"><input value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder="SDG-XXXXXXXXXX" className="min-h-[44px] rounded-lg border border-line bg-surface-2 px-3 text-sm" /><button className="interactive-outline min-h-[42px] rounded-lg border border-line font-semibold">Check status</button></form>{lookupResult && <p className="mt-3 text-sm text-text-2" role="status">{lookupResult}</p>}<Link href="/" className="mt-6 inline-block text-sm font-semibold text-text underline">Back to home</Link></aside>

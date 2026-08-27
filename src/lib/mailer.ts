@@ -47,3 +47,29 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
   });
   return { delivered: true };
 }
+
+export async function sendSupportConfirmation(to: string, reference: string, status: string): Promise<{ delivered: boolean }> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM || 'SDG 17 Hub <onboarding@resend.dev>';
+  const statusUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/support`;
+
+  if (!apiKey) {
+    // Keep an audit-friendly server signal without exposing the report text.
+    console.log(`[mailer:dev-fallback] Support confirmation for ${reference} to ${to} (RESEND_API_KEY not set)`);
+    return { delivered: false };
+  }
+
+  try {
+    await new Resend(apiKey).emails.send({
+      from,
+      to,
+      subject: `Support request received — ${reference}`,
+      text: `We received your SDG 17 platform support request. Reference: ${reference}. Current status: ${status}. Check its status at ${statusUrl}.`,
+      html: `<p>We received your SDG 17 platform support request.</p><p><strong>Reference:</strong> ${reference}<br/><strong>Current status:</strong> ${status}</p><p><a href="${statusUrl}">Check request status</a></p>`
+    });
+    return { delivered: true };
+  } catch (error) {
+    console.error('[mailer] support confirmation failed', error);
+    return { delivered: false };
+  }
+}

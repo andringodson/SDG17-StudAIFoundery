@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getSession } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { handleApiError } from '@/lib/apiError';
+import { sendSupportConfirmation } from '@/lib/mailer';
 
 const CreateBody = z.object({
   category: z.enum(['account', 'technical', 'partnership-builder', 'map', 'other']),
@@ -27,7 +28,11 @@ export async function POST(req: NextRequest) {
        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING reference, status`,
       [reference(), session?.userId ?? null, data.category, data.description, data.currentPage ?? null, data.contactConsent ? data.contactEmail ?? null : null, data.contactConsent]
     );
-    return NextResponse.json(rows[0], { status: 201 });
+    const ticket = rows[0]!;
+    const confirmation = data.contactConsent && data.contactEmail
+      ? await sendSupportConfirmation(data.contactEmail, ticket.reference, ticket.status)
+      : { delivered: false };
+    return NextResponse.json({ ...ticket, confirmationDelivered: confirmation.delivered }, { status: 201 });
   } catch (err) {
     return handleApiError(err);
   }

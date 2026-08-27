@@ -59,6 +59,13 @@ export function Header() {
             </a>
           ))}
           <Link
+            href="/support"
+            onClick={() => setOpen(false)}
+            className="rounded-lg px-3 py-2 text-sm font-semibold text-text-2 transition hover:bg-white/10 hover:text-text"
+          >
+            Report issue
+          </Link>
+          <Link
             href={signedIn ? '/dashboard' : '/auth'}
             onClick={() => setOpen(false)}
             className="rounded-lg border border-line-strong px-3 py-2 text-sm font-semibold text-text transition hover:bg-white/10"
