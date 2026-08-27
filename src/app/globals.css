@@ -1,0 +1,210 @@
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   Design tokens — Tailwind v4 CSS-first theme. Same palette family as the
+   spec: SDG deep blue/royal blue brand, cyan/green accents, a reserved
+   status quartet. Categorical chart colours are a SEPARATE validated set
+   (see components/charts) because five brand-adjacent hues fail
+   colour-vision separation as adjacent data marks.
+   --------------------------------------------------------------------------- */
+@theme {
+  --color-brand-deep: #0a3a60;
+  --color-brand-royal: #1f69b3;
+  --color-brand-cyan: #00aed6;
+  --color-brand-green: #2ec4b6;
+
+  --color-bg: #051524;
+  --color-surface-1: #0b1f33;
+  --color-surface-2: #0f2942;
+  --color-surface-3: #14344f;
+  --color-line: rgb(148 194 236 / 0.16);
+  --color-line-strong: rgb(148 194 236 / 0.30);
+
+  --color-text: #eaf3fb;
+  --color-text-2: #a9c4dc;
+  --color-text-3: #7c9dba;
+
+  --color-status-normal: #1f69b3;
+  --color-status-warn: #ffb703;
+  --color-status-error: #e63946;
+  --color-status-complete: #2a9d8f;
+
+  --color-series-1: #3987e5;
+  --color-series-2: #d95926;
+  --color-series-3: #199e70;
+  --color-series-4: #c98500;
+  --color-series-5: #d55181;
+
+  --font-sans: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  background-image:
+    radial-gradient(900px 520px at 12% -8%, rgb(31 105 179 / 0.24), transparent 62%),
+    radial-gradient(760px 460px at 92% 4%, rgb(0 174 214 / 0.16), transparent 60%);
+  background-attachment: fixed;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-cyan);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skiplink {
+  position: absolute;
+  inset-inline-start: 1rem;
+  inset-block-start: -100%;
+  z-index: 200;
+  padding: 0.7rem 1.1rem;
+  background: var(--color-brand-cyan);
+  color: #04212c;
+  font-weight: 700;
+  border-radius: 9px;
+  transition: inset-block-start 0.18s ease;
+}
+.skiplink:focus {
+  inset-block-start: 1rem;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 999px;
+}
+
+@keyframes indet {
+  0% { transform: translateX(-105%); }
+  100% { transform: translateX(315%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Glow / shine primary button — uiverse.io-style gradient border with a
+   sweeping highlight on hover, restrained to match the SDG brand palette
+   rather than the neon versions that style of component usually ships with.
+   --------------------------------------------------------------------------- */
+.glow-btn {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--color-brand-cyan), var(--color-brand-royal));
+  color: #04212c;
+  box-shadow: 0 0 0 rgb(0 174 214 / 0);
+  transition: box-shadow 0.28s ease, transform 0.18s ease;
+}
+.glow-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(115deg, transparent 20%, rgb(255 255 255 / 0.55) 40%, transparent 60%);
+  transform: translateX(-120%);
+  transition: transform 0.6s ease;
+}
+.glow-btn:hover {
+  box-shadow: 0 0 26px rgb(0 174 214 / 0.45), 0 0 4px rgb(46 196 182 / 0.4);
+  transform: translateY(-1px);
+}
+.glow-btn:hover::before {
+  transform: translateX(120%);
+}
+.glow-btn:active {
+  transform: translateY(0);
+}
+.glow-btn:disabled {
+  opacity: 0.4;
+  box-shadow: none;
+  transform: none;
+  cursor: not-allowed;
+}
+
+/* Lift-and-glow card hover, used for pillar/stakeholder/pick cards. */
+.glow-card {
+  transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
+}
+.glow-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--color-line-strong);
+  box-shadow: 0 14px 32px rgb(2 10 20 / 0.4), 0 0 0 1px rgb(0 174 214 / 0.12);
+}
+.glow-card[data-active='true'] {
+  border-color: var(--color-brand-cyan);
+  box-shadow: 0 0 0 1px var(--color-brand-cyan), 0 0 22px rgb(0 174 214 / 0.28);
+}
+
+/* Logo mark: static by default; the loading screen adds a slow node pulse. */
+.logo-mark__node {
+  transform-origin: center;
+  transform-box: fill-box;
+}
+.logo-mark--animated .logo-mark__node--1 { animation: logoPulse 2.4s ease-in-out infinite; }
+.logo-mark--animated .logo-mark__node--2 { animation: logoPulse 2.4s ease-in-out infinite; animation-delay: 0.3s; }
+.logo-mark--animated .logo-mark__node--3 { animation: logoPulse 2.4s ease-in-out infinite; animation-delay: 0.6s; }
+.logo-mark--animated .logo-mark__web { animation: logoWebFade 2.4s ease-in-out infinite; }
+@keyframes logoPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.22); opacity: 0.75; }
+}
+@keyframes logoWebFade {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 0.4; }
+}
+
+.loading-sweep {
+  animation: loadingSweep 1.3s ease-in-out infinite;
+}
+@keyframes loadingSweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+/* Numbered badge — nbnzia/metacci-style stat and step markers. */
+.num-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, var(--color-brand-cyan), var(--color-brand-royal));
+  color: #04212c;
+}

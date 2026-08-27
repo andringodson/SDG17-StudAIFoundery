@@ -8,3 +8,10 @@ Thumbs.db
 
 .vercel
 .env*
+
+.next/
+out/
+next-env.d.ts
+!.env.example
+!server/.env.example
+tsconfig.tsbuildinfo
