@@ -5,8 +5,8 @@ const ROLE_HOME: Record<string, string> = {
   company: '/dashboard/company',
   investor: '/dashboard/investor',
   general_user: '/dashboard/general',
-  admin: '/dashboard/restricted',
-  compliance_admin: '/dashboard/restricted'
+  admin: '/dashboard/admin',
+  compliance_admin: '/dashboard/admin'
 };
 
 /** The single entry point every login/registration redirects to. Its only

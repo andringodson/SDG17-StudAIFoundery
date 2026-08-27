@@ -6,7 +6,7 @@ import {
   getProfile, getProgressSummary, getMyPledges, createReminder, listReminders,
   logAiAction, formatBadgeCount
 } from '@/lib/assistant/tools';
-import { SDG17_EXPLAINER, PLATFORM_HELP, DISCLAIMER, detectAssistantLanguage, findSupportKnowledge, languagePreface, type AssistantAction, type AssistantLanguage } from '@/lib/assistant/knowledge';
+import { SDG17_EXPLAINER, PLATFORM_HELP, DISCLAIMER, detectAssistantLanguage, findAssistantAnswer, languagePreface, type AssistantAction, type AssistantLanguage } from '@/lib/assistant/knowledge';
 import { handleApiError } from '@/lib/apiError';
 import { formatCount } from '@/lib/inr';
 
@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
       }
 
       default: {
-        const knowledge = findSupportKnowledge(parsed.data.message);
+        const knowledge = await findAssistantAnswer(parsed.data.message);
         if (knowledge) return respond({
           text: `${prefix}${knowledge.text}`,
           actions: knowledge.actions,

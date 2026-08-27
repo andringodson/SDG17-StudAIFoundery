@@ -66,12 +66,56 @@ export function detectAssistantLanguage(text: string): AssistantLanguage {
   return 'en';
 }
 
-export function findSupportKnowledge(text: string): { text: string; actions: AssistantAction[] } | null {
+function bestMatch(text: string, entries: KnowledgeEntry[]): { text: string; actions: AssistantAction[] } | null {
   const lower = text.toLowerCase();
-  const match = SUPPORT_KNOWLEDGE
+  const match = entries
     .map((entry) => ({ entry, score: entry.keywords.reduce((score, keyword) => score + (lower.includes(keyword) ? keyword.length : 0), 0) }))
     .sort((a, b) => b.score - a.score)[0];
   return match?.score ? { text: match.entry.text, actions: match.entry.actions } : null;
+}
+
+/** Admin-managed rows from assistant_faqs, active only. Returns [] whenever
+ * the database isn't configured or the table is empty — the hardcoded
+ * SUPPORT_KNOWLEDGE above is what keeps the assistant working either way. */
+export async function getCustomFaqs(): Promise<KnowledgeEntry[]> {
+  try {
+    const { query } = await import('@/lib/db');
+    const rows = await query<{ keywords: string[]; response: string; action_label: string | null; action_href: string | null }>(
+      'SELECT keywords, response, action_label, action_href FROM assistant_faqs WHERE is_active = true'
+    );
+    return rows.map((r) => ({
+      keywords: r.keywords.map((k) => k.toLowerCase()),
+      text: r.response,
+      actions: r.action_label && r.action_href ? [{ label: r.action_label, href: r.action_href }] : []
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/** Synchronous match against the hardcoded knowledge only — used where a
+ * database round-trip isn't warranted (e.g. pageSupport's static hints). */
+export function findSupportKnowledge(text: string): { text: string; actions: AssistantAction[] } | null {
+  return bestMatch(text, SUPPORT_KNOWLEDGE);
+}
+
+/** Admin-managed FAQs take priority over the hardcoded ones on a tie, since
+ * an admin correcting or replacing a stock answer should win. Falls back to
+ * the hardcoded set whenever no custom entry scores higher. */
+export async function findAssistantAnswer(text: string): Promise<{ text: string; actions: AssistantAction[] } | null> {
+  const custom = await getCustomFaqs();
+  if (custom.length) {
+    const customMatch = bestMatch(text, custom);
+    const stockMatch = bestMatch(text, SUPPORT_KNOWLEDGE);
+    if (customMatch && (!stockMatch || scoreOf(text, custom) >= scoreOf(text, SUPPORT_KNOWLEDGE))) return customMatch;
+    return stockMatch ?? customMatch;
+  }
+  return findSupportKnowledge(text);
+}
+
+function scoreOf(text: string, entries: KnowledgeEntry[]): number {
+  const lower = text.toLowerCase();
+  return Math.max(0, ...entries.map((e) => e.keywords.reduce((s, k) => s + (lower.includes(k) ? k.length : 0), 0)));
 }
 
 export function pageSupport(context?: AssistantContext): { text: string; actions: AssistantAction[] } | null {

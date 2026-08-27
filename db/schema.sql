@@ -182,6 +182,45 @@ CREATE TABLE IF NOT EXISTS support_tickets (
 );
 
 -- -----------------------------------------------------------------------------
+-- 7. OAuth account links
+-- One row per (provider, external account) a user has connected. A user row
+-- is created here on first Google/Facebook sign-in if no matching email
+-- already exists; if one does, the provider account links to it instead of
+-- creating a duplicate. Nothing in this table works until GOOGLE_CLIENT_ID /
+-- FACEBOOK_CLIENT_ID (+ secrets) are set — see src/lib/oauth.ts.
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS oauth_accounts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    provider VARCHAR(20) NOT NULL CHECK (provider IN ('google', 'facebook')),
+    provider_account_id VARCHAR(120) NOT NULL,
+    email VARCHAR(255),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (provider, provider_account_id)
+);
+
+-- -----------------------------------------------------------------------------
+-- 8. Assistant knowledge base (admin-managed)
+-- The assistant's hardcoded knowledge (src/lib/assistant/knowledge.ts) stays
+-- as a fallback that always works with no database; these rows let an admin
+-- add or correct answers without a code deploy. Matched the same way: total
+-- keyword-length score, highest wins.
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS assistant_faqs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    keywords TEXT[] NOT NULL,
+    response TEXT NOT NULL,
+    action_label VARCHAR(80),
+    action_href VARCHAR(255),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_assistant_faqs_active ON assistant_faqs (is_active);
+
+-- -----------------------------------------------------------------------------
 -- Row-Level Security
 -- The app talks to Postgres with the service-role connection string from API
 -- routes only (never from the browser), so RLS here is a defense-in-depth
@@ -199,6 +238,8 @@ ALTER TABLE password_reset_tokens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_reminders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE support_tickets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE oauth_accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE assistant_faqs ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
@@ -234,6 +275,12 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_support_tickets') THEN
         CREATE POLICY service_role_all_support_tickets ON support_tickets FOR ALL TO service_role USING (true) WITH CHECK (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_oauth_accounts') THEN
+        CREATE POLICY service_role_all_oauth_accounts ON oauth_accounts FOR ALL TO service_role USING (true) WITH CHECK (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_assistant_faqs') THEN
+        CREATE POLICY service_role_all_assistant_faqs ON assistant_faqs FOR ALL TO service_role USING (true) WITH CHECK (true);
     END IF;
 END $$;
 

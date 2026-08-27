@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, type FormEvent } from 'react';
+import { Suspense, useEffect, useState, type FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { AuthShell } from '@/components/auth/AuthShell';
@@ -10,8 +10,8 @@ const ROLE_HOME: Record<string, string> = {
   company: '/dashboard/company',
   investor: '/dashboard/investor',
   general_user: '/dashboard/general',
-  admin: '/dashboard/restricted',
-  compliance_admin: '/dashboard/restricted'
+  admin: '/dashboard/admin',
+  compliance_admin: '/dashboard/admin'
 };
 
 export default function LoginPage() {
@@ -22,15 +22,28 @@ export default function LoginPage() {
   );
 }
 
+const OAUTH_ERROR: Record<string, string> = {
+  not_configured: 'That sign-in method is not set up on this deployment yet.',
+  invalid_state: 'That sign-in attempt could not be verified. Please try again.',
+  exchange_failed: 'Sign-in with that provider failed. Please try again or use your email and password.'
+};
+
 function LoginInner() {
   const router = useRouter();
-  const expired = useSearchParams().get('expired') === '1';
+  const params = useSearchParams();
+  const expired = params.get('expired') === '1';
+  const oauthError = params.get('oauthError');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState('');
   const [retryAfter, setRetryAfter] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [social, setSocial] = useState({ google: false, facebook: false });
+
+  useEffect(() => {
+    fetch('/api/auth/oauth/status').then((r) => r.json()).then(setSocial).catch(() => {});
+  }, []);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -61,6 +74,11 @@ function LoginInner() {
       {expired && (
         <p role="alert" className="mb-4 rounded-lg border border-status-warn/40 bg-status-warn/10 px-3 py-2 text-sm text-text-2">
           Your session has expired. Please log in again.
+        </p>
+      )}
+      {oauthError && (
+        <p role="alert" className="mb-4 rounded-lg border border-red-400/40 bg-red-400/10 px-3 py-2 text-sm text-text-2">
+          {OAUTH_ERROR[oauthError] ?? 'Sign-in could not be completed.'}
         </p>
       )}
       <form onSubmit={submit} className="grid gap-4">
@@ -111,25 +129,35 @@ function LoginInner() {
       </div>
 
       <div className="grid gap-2">
-        <button
-          type="button"
-          disabled
-          aria-disabled
-          title="Google sign-in needs a Google OAuth app registered by the site owner — not yet configured."
-          className="flex min-h-[44px] items-center justify-center rounded-lg border border-line text-sm font-semibold text-text-3 opacity-50"
-        >
-          Continue with Google (requires site setup)
-        </button>
-        <button
-          type="button"
-          disabled
-          aria-disabled
-          title="Facebook sign-in needs a Meta OAuth app registered by the site owner — not yet configured."
-          className="flex min-h-[44px] items-center justify-center rounded-lg border border-line text-sm font-semibold text-text-3 opacity-50"
-        >
-          Continue with Facebook (requires site setup)
-        </button>
-        <p className="text-center text-xs text-text-3">Social sign-in is shown only as unavailable until the required Google or Meta OAuth credentials are configured securely.</p>
+        {social.google ? (
+          <a href="/api/auth/oauth/google" className="flex min-h-[44px] items-center justify-center rounded-lg border border-line text-sm font-semibold hover:bg-white/5">
+            Continue with Google
+          </a>
+        ) : (
+          <button
+            type="button" disabled aria-disabled
+            title="Google sign-in needs a Google OAuth app registered by the site owner — not yet configured."
+            className="flex min-h-[44px] items-center justify-center rounded-lg border border-line text-sm font-semibold text-text-3 opacity-50"
+          >
+            Continue with Google (requires site setup)
+          </button>
+        )}
+        {social.facebook ? (
+          <a href="/api/auth/oauth/facebook" className="flex min-h-[44px] items-center justify-center rounded-lg border border-line text-sm font-semibold hover:bg-white/5">
+            Continue with Facebook
+          </a>
+        ) : (
+          <button
+            type="button" disabled aria-disabled
+            title="Facebook sign-in needs a Meta OAuth app registered by the site owner — not yet configured."
+            className="flex min-h-[44px] items-center justify-center rounded-lg border border-line text-sm font-semibold text-text-3 opacity-50"
+          >
+            Continue with Facebook (requires site setup)
+          </button>
+        )}
+        {!social.google && !social.facebook && (
+          <p className="text-center text-xs text-text-3">Social sign-in is shown only as unavailable until the required Google or Meta OAuth credentials are configured securely.</p>
+        )}
       </div>
 
       <p className="mt-6 text-center text-sm text-text-3">

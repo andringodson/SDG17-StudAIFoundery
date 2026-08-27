@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { NextResponse } from 'next/server';
 import { getSession, clearSessionCookie, type SessionPayload, type UserRole } from './auth';
 import { query } from './db';
 
@@ -21,5 +22,22 @@ export async function requireRole(...allowed: UserRole[]): Promise<SessionPayloa
   }
 
   if (!allowed.includes(session.role)) redirect('/dashboard/restricted');
+  return session;
+}
+
+/** Same role/session-version check as requireRole, but for API route handlers:
+ * returns a JSON 403/401 response instead of redirecting, since a fetch()
+ * call has nowhere to be redirected to. Returns the session on success, or a
+ * NextResponse the caller should return immediately. */
+export async function requireApiRole(...allowed: UserRole[]): Promise<SessionPayload | NextResponse> {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: 'Not signed in.' }, { status: 401 });
+
+  const rows = await query<{ session_version: number }>('SELECT session_version FROM users WHERE id = $1', [session.userId]);
+  if (!rows[0] || rows[0].session_version !== session.sessionVersion) {
+    await clearSessionCookie();
+    return NextResponse.json({ error: 'Session expired.' }, { status: 401 });
+  }
+  if (!allowed.includes(session.role)) return NextResponse.json({ error: 'You do not have permission to do this.' }, { status: 403 });
   return session;
 }

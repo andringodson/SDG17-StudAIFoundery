@@ -78,6 +78,26 @@ Once both are deployed:
 - `.env.local`: `NEXT_PUBLIC_WS_URL=wss://your-realtime-server.example.com/live`
 - `server/.env`: `WEB_APP_URL=https://your-web-app.vercel.app`
 
+### 7. Social sign-in — Google & Facebook (optional)
+
+The routes and account-linking logic are fully built (`src/lib/oauth.ts`, `src/app/api/auth/oauth/**`) and wired into the login page — they just need a real OAuth app, which only a human can create (identity/domain verification):
+
+1. **Google**: [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials → **Create OAuth client ID** (type: Web application). Authorized redirect URI: `{NEXT_PUBLIC_APP_URL}/api/auth/oauth/google/callback`. Put the client ID/secret in `.env.local` as `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`.
+2. **Facebook**: [Meta for Developers](https://developers.facebook.com) → your app → Facebook Login → Settings → add the same callback URL under `/api/auth/oauth/facebook/callback`. Put the app ID/secret in `.env.local` as `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET`.
+3. Set `NEXT_PUBLIC_APP_URL` to your real deployed URL (redirect URIs must match exactly).
+
+Until both env vars for a provider are set, `/api/auth/oauth/status` reports it as unavailable and its button on `/auth/login` stays disabled with an explanatory tooltip — never faked as working. Once configured, signing in finds an existing account by email and links the provider to it, or creates a new `general_user` account with the email marked verified (Google/Facebook already proved it).
+
+### 8. Admin console access
+
+There's no self-service way to become an admin — that's deliberate; privilege escalation should never be a UI button. After `npm run db:migrate`, promote an existing account directly in the database:
+
+```sql
+UPDATE users SET role = 'admin' WHERE username = 'your-username';
+```
+
+Then sign in and visit `/dashboard/admin` — support ticket triage (change status: received → in review → resolved → closed) and the assistant's admin-managed knowledge base (`assistant_faqs`, additive to the hardcoded answers in `src/lib/assistant/knowledge.ts`).
+
 See `.env.example` and `server/.env.example` for the full annotated list.
 
 ---
@@ -119,7 +139,8 @@ npm run test:formulas
 | **Accessible status bar** | `src/components/statusbar/` | `role="progressbar"`, `aria-live`, Escape-to-cancel, expandable diagnostic log — drives every simulator's "Run" action |
 | **Live audience poll** | `LivePoll.tsx` | WebSocket when `NEXT_PUBLIC_WS_URL` is set, REST polling fallback otherwise |
 | **Pledge wall** | `PledgeWall.tsx` | Public, persisted via `/api/pledges` |
-| **Auth** | `AuthPanel.tsx` + `/api/auth/*` | Username/password, email OTP verification, Telegram account linking |
+| **Auth** | `AuthPanel.tsx` + `/api/auth/*` | Username/password, email OTP verification, Telegram account linking, Google/Facebook OAuth (inert until credentials are set) |
+| **Admin console** | `src/app/dashboard/admin/` + `/api/admin/*` | Support ticket status triage, assistant knowledge-base (FAQ) management — role-gated server-side, no self-service admin signup |
 
 ### The finance formulas (exact, from spec)
 

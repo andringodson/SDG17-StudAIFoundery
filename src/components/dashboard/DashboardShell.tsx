@@ -7,7 +7,9 @@ import { Logo } from '@/components/Logo';
 const ROLE_LABEL: Record<string, string> = {
   company: 'Company Account',
   investor: 'Investor Account',
-  general_user: 'Explorer Account'
+  general_user: 'Explorer Account',
+  admin: 'Administrator',
+  compliance_admin: 'Compliance Administrator'
 };
 
 export function DashboardShell({
