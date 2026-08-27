@@ -64,7 +64,7 @@ export interface LlmResult {
  * (missing key, network error, non-200, empty completion) so the caller can
  * fall back to the existing generic response — this must never throw.
  */
-async function callGroq(apiKey: string, model: string, message: string, previousTopic?: string): Promise<string | null> {
+async function callGroq(apiKey: string, model: string, message: string, previousTopic?: string, grounding?: string): Promise<string | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12_000);
 
@@ -77,7 +77,14 @@ async function callGroq(apiKey: string, model: string, message: string, previous
       temperature: 0.3,
       max_tokens: 220,
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT + (previousTopic ? `\n\nThe user was just discussing: ${previousTopic}.` : '') },
+        {
+          role: 'system',
+          content: SYSTEM_PROMPT
+            + (previousTopic ? `\n\nThe user was just discussing: ${previousTopic}.` : '')
+            + (grounding
+              ? `\n\nThis platform's own material may be relevant here. Use it ONLY if the question is genuinely about SDG 17 or this site; if the person means the term in its everyday sense, answer that instead and ignore the material below.\n---\n${grounding}\n---`
+              : '')
+        },
         { role: 'user', content: message }
       ]
     })
@@ -95,7 +102,10 @@ async function callGroq(apiKey: string, model: string, message: string, previous
   return data.choices?.[0]?.message?.content?.trim() || null;
 }
 
-export async function askLlm(message: string, opts?: { previousTopic?: string }): Promise<LlmResult | null> {
+export async function askLlm(
+  message: string,
+  opts?: { previousTopic?: string; grounding?: string }
+): Promise<LlmResult | null> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return null;
 
@@ -103,13 +113,13 @@ export async function askLlm(message: string, opts?: { previousTopic?: string })
   const primary = process.env.GROQ_MODEL || DEFAULT_MODEL;
 
   try {
-    let text = await callGroq(apiKey, primary, message, opts?.previousTopic);
+    let text = await callGroq(apiKey, primary, message, opts?.previousTopic, opts?.grounding);
 
     // One retry on a different model when the primary returns nothing usable.
     // Skipped when GROQ_MODEL pins a specific model — an explicit choice
     // should not be silently overridden.
     if (!text && !process.env.GROQ_MODEL && primary !== FALLBACK_MODEL) {
-      text = await callGroq(apiKey, FALLBACK_MODEL, message, opts?.previousTopic);
+      text = await callGroq(apiKey, FALLBACK_MODEL, message, opts?.previousTopic, opts?.grounding);
     }
     if (!text) return null;
 

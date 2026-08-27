@@ -6,8 +6,10 @@ import { PartnershipMap } from '@/components/map/PartnershipMap';
 import { LivePoll } from '@/components/LivePoll';
 import { PledgeWall } from '@/components/PledgeWall';
 import { AuthPanel } from '@/components/AuthPanel';
+import Link from 'next/link';
 import { HeroTitle } from '@/components/HeroTitle';
 import { ScrollReveal } from '@/components/ScrollReveal';
+import { Logo } from '@/components/Logo';
 
 const STATS = [
   { n: '01', label: 'Active projects', value: '5,830' },
@@ -87,12 +89,47 @@ export default function HomePage() {
         </div>
       </Section>
 
-      <footer className="mt-20 border-t border-line pt-8 text-sm text-text-3">
-        <p>
-          SDG 17 · Global Partnership Platform — built by the RIT StudAI Foundery team. Datasets are illustrative;
-          this is a teaching and advocacy tool, not an official UN data source.
+      {/* Three columns on desktop, stacked on mobile: identity, where to go,
+          what this is. The disclaimer is given its own line rather than
+          buried mid-paragraph — the figures on this site are invented, and
+          that should be findable, not skimmed past. */}
+      <footer className="mt-24 border-t border-line pt-10">
+        <div className="grid gap-8 sm:grid-cols-[1.4fr_1fr_1fr]">
+          <div>
+            <Logo />
+            <p className="mt-3 max-w-[38ch] text-sm text-text-3">
+              A teaching and advocacy tool for exploring how partnership accelerates the
+              Sustainable Development Goals.
+            </p>
+          </div>
+
+          <nav aria-label="Explore">
+            <h2 className="text-xs font-medium uppercase tracking-[0.14em] text-text-3">Explore</h2>
+            <ul className="mt-3 grid gap-2 text-sm">
+              <li><a href="#map" className="text-text-2 hover:text-text">Partnership map</a></li>
+              <li><a href="#finance" className="text-text-2 hover:text-text">Finance simulator</a></li>
+              <li><a href="#trade" className="text-text-2 hover:text-text">Trade simulator</a></li>
+              <li><a href="#builder" className="text-text-2 hover:text-text">Partnership builder</a></li>
+            </ul>
+          </nav>
+
+          <nav aria-label="Account and support">
+            <h2 className="text-xs font-medium uppercase tracking-[0.14em] text-text-3">Account</h2>
+            <ul className="mt-3 grid gap-2 text-sm">
+              <li><Link href="/auth" className="text-text-2 hover:text-text">Sign in</Link></li>
+              <li><Link href="/auth/register" className="text-text-2 hover:text-text">Create account</Link></li>
+              <li><Link href="/support" className="text-text-2 hover:text-text">Report an issue</Link></li>
+            </ul>
+          </nav>
+        </div>
+
+        <div className="mt-10 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-line pt-6 text-xs text-text-3">
+          <p>SDG 17 · Global Partnership Platform — built by the RIT StudAI Foundery team.</p>
+          <p className="text-text-3/70">A Project by Error404</p>
+        </div>
+        <p className="mt-3 text-xs text-text-3/70">
+          Figures shown across this site are illustrative demonstration data, not official UN statistics.
         </p>
-        <p className="mt-2 text-xs text-text-3/70">A Project by Error404</p>
       </footer>
     </main>
   );

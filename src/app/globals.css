@@ -243,6 +243,69 @@ body {
   100% { transform: translateX(400%); }
 }
 
+/* ---------------------------------------------------------------------------
+   Interaction feedback. Kept to opacity/transform only — those are the two
+   properties a browser can animate on the compositor without re-running
+   layout or paint, so they stay smooth on a page that already runs a canvas
+   background. Everything here is monochrome to match the rest of the design;
+   the colour that exists is the microphone's live state, which is a status,
+   not decoration.
+   --------------------------------------------------------------------------- */
+
+/* Microphone level bars while dictating. */
+.mic-wave { display: inline-flex; align-items: flex-end; gap: 2px; height: 0.75rem; }
+.mic-wave i {
+  width: 2px;
+  height: 100%;
+  background: var(--color-status-error);
+  border-radius: 1px;
+  animation: micWave 1s ease-in-out infinite;
+}
+.mic-wave i:nth-child(2) { animation-delay: 0.15s; }
+.mic-wave i:nth-child(3) { animation-delay: 0.3s; }
+.mic-wave i:nth-child(4) { animation-delay: 0.45s; }
+@keyframes micWave {
+  0%, 100% { transform: scaleY(0.35); opacity: 0.55; }
+  50%      { transform: scaleY(1);    opacity: 1; }
+}
+
+/* "Thinking" dots — replaces a bare text label while a reply is in flight. */
+.typing-dots { display: inline-flex; align-items: center; gap: 3px; }
+.typing-dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-text-3);
+  animation: typingDot 1.2s ease-in-out infinite;
+}
+.typing-dots i:nth-child(2) { animation-delay: 0.18s; }
+.typing-dots i:nth-child(3) { animation-delay: 0.36s; }
+@keyframes typingDot {
+  0%, 100% { opacity: 0.25; transform: translateY(0); }
+  40%      { opacity: 1;    transform: translateY(-2px); }
+}
+
+/* Each reply settles in rather than snapping into place. */
+.msg-enter { animation: msgEnter 0.26s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes msgEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Press feedback for the small bordered buttons (suggestions, actions,
+   panel controls). The lift is deliberately smaller than .glow-btn's — these
+   are secondary controls and should not compete with the primary one. */
+.tap {
+  transition: transform 0.14s cubic-bezier(.2, .8, .2, 1), background-color 0.18s ease, border-color 0.18s ease;
+}
+.tap:hover { transform: translateY(-1px); }
+.tap:active { transform: translateY(0) scale(0.97); }
+
+@media (prefers-reduced-motion: reduce) {
+  .mic-wave i, .typing-dots i, .msg-enter { animation: none; }
+  .tap:hover, .tap:active { transform: none; }
+}
+
 /* Numbered marker — plain typography, no filled badge. Matches metacci's
    restraint: numbers are set in type, not decorated as icons. */
 .num-badge {

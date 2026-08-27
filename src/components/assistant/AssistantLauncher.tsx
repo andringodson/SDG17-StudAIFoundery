@@ -34,6 +34,7 @@ export function AssistantLauncher() {
   const [previousTopic, setPreviousTopic] = useState<string>();
   const [listening, setListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(false);
+  const [autoListen, setAutoListen] = useState(true);
   const [voiceError, setVoiceError] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -41,14 +42,27 @@ export function AssistantLauncher() {
 
   // Checked after mount, never during render — the API exists only in the
   // browser, and reading it on the server would break hydration.
-  useEffect(() => { setVoiceSupported(isSpeechSupported()); }, []);
+  useEffect(() => {
+    setVoiceSupported(isSpeechSupported());
+    try {
+      // Opt-out, not opt-in: hands-free is the requested default, but a
+      // panel that switches the microphone on by itself must be refusable
+      // and must remember the refusal.
+      setAutoListen(localStorage.getItem('sdg17.autoListen') !== 'off');
+    } catch { /* private mode / blocked storage — keep the default */ }
+  }, []);
 
-  function toggleDictation() {
+  function toggleAutoListen() {
+    setAutoListen((on) => {
+      const next = !on;
+      try { localStorage.setItem('sdg17.autoListen', next ? 'on' : 'off'); } catch { /* ignore */ }
+      if (!next && listening) { dictationRef.current?.stop(); setListening(false); }
+      return next;
+    });
+  }
+
+  function beginDictation() {
     setVoiceError('');
-    if (listening) {
-      dictationRef.current?.stop();
-      return;
-    }
     const handle = startDictation(
       language,
       (text, isFinal) => {
@@ -65,10 +79,34 @@ export function AssistantLauncher() {
     setListening(true);
   }
 
+  function toggleDictation() {
+    if (listening) { dictationRef.current?.stop(); return; }
+    beginDictation();
+  }
+
   // Stop the microphone if the panel closes mid-utterance.
   useEffect(() => {
     if (!open && listening) { dictationRef.current?.stop(); setListening(false); }
   }, [open, listening]);
+
+  // Hands-free: start listening as soon as the panel opens, so asking by
+  // voice needs no click at all. Opening the panel is itself the user gesture
+  // browsers require before granting microphone access, so this is allowed —
+  // but only after the first grant, since an unprompted permission dialog on
+  // open would be hostile. Held back while a reply is in flight.
+  useEffect(() => {
+    if (!open || !voiceSupported || !autoListen || listening || busy) return;
+    let cancelled = false;
+    navigator.mediaDevices?.enumerateDevices?.()
+      .then((devices) => {
+        // A non-empty label means permission was granted previously.
+        const alreadyGranted = devices.some((d) => d.kind === 'audioinput' && d.label !== '');
+        if (alreadyGranted && !cancelled) beginDictation();
+      })
+      .catch(() => { /* enumeration unavailable — leave it to the button */ });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, voiceSupported, autoListen, busy]);
 
   useEffect(() => {
     fetch('/api/me').then((r) => r.json()).then((d) => { if (d.user?.role) setRole(d.user.role); }).catch(() => {});
@@ -175,7 +213,7 @@ export function AssistantLauncher() {
                 <p className="mb-2 mt-5 text-xs font-medium uppercase tracking-[0.12em] text-text-3">Try asking</p>
                 <div className="grid gap-2">
                   {(STARTERS[role] ?? STARTERS.general_user!).map((s) => (
-                    <button key={s} onClick={() => send(s)} className="rounded-lg border border-line px-3 py-2 text-left text-sm hover:bg-white/5">
+                    <button key={s} onClick={() => send(s)} className="tap rounded-lg border border-line px-3 py-2 text-left text-sm hover:bg-white/5">
                       {s}
                     </button>
                   ))}
@@ -184,7 +222,7 @@ export function AssistantLauncher() {
             )}
 
             {messages.map((m, i) => (
-              <div key={i} className={m.from === 'user' ? 'text-right' : ''}>
+              <div key={i} className={`msg-enter ${m.from === 'user' ? 'text-right' : ''}`}>
                 <p className={`inline-block max-w-[85%] whitespace-pre-wrap rounded-xl px-3 py-2 text-left text-sm ${
                   m.from === 'user' ? 'bg-white text-black' : 'border border-line bg-bg/40'
                 }`}>
@@ -193,26 +231,26 @@ export function AssistantLauncher() {
 
                 {m.escalate && (
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <a href="/support" onClick={() => setOpen(false)} className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold">Create support request</a>
-                    <button onClick={clearChat} className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold">Try another question</button>
+                    <a href="/support" onClick={() => setOpen(false)} className="tap rounded-lg border border-line px-3 py-1.5 text-xs font-semibold">Create support request</a>
+                    <button onClick={clearChat} className="tap rounded-lg border border-line px-3 py-1.5 text-xs font-semibold">Try another question</button>
                   </div>
                 )}
                 {m.frustration && (
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <button onClick={() => send('How does this platform work?')} className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold">Try Again</button>
-                    <a href="/support" onClick={() => setOpen(false)} className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold">Report a problem</a>
+                    <button onClick={() => send('How does this platform work?')} className="tap rounded-lg border border-line px-3 py-1.5 text-xs font-semibold">Try Again</button>
+                    <a href="/support" onClick={() => setOpen(false)} className="tap rounded-lg border border-line px-3 py-1.5 text-xs font-semibold">Report a problem</a>
                   </div>
                 )}
                 {m.pendingConfirmation && (
                   <div className="mt-2 flex flex-wrap gap-2">
                     <button onClick={() => confirmReminder(m.pendingConfirmation!)} className="glow-btn rounded-lg px-3 py-1.5 text-xs font-semibold">Confirm</button>
-                    <button onClick={() => setMessages((ms) => [...ms, { from: 'ai', text: 'Cancelled — no reminder was created.' }])} className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold">Cancel</button>
+                    <button onClick={() => setMessages((ms) => [...ms, { from: 'ai', text: 'Cancelled — no reminder was created.' }])} className="tap rounded-lg border border-line px-3 py-1.5 text-xs font-semibold">Cancel</button>
                   </div>
                 )}
                 {m.suggestions && i === messages.length - 1 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {m.suggestions.map((s) => (
-                      <button key={s} onClick={() => send(s)} className="rounded-full border border-line px-2.5 py-1 text-xs text-text-2 hover:bg-white/5">
+                      <button key={s} onClick={() => send(s)} className="tap rounded-full border border-line px-2.5 py-1 text-xs text-text-2 hover:bg-white/5">
                         {s}
                       </button>
                     ))}
@@ -236,7 +274,11 @@ export function AssistantLauncher() {
                 )}
               </div>
             ))}
-            {busy && <p className="text-xs text-text-3">Thinking…</p>}
+            {busy && (
+              <p className="flex items-center gap-2 text-xs text-text-3" role="status">
+                <span className="typing-dots" aria-hidden="true"><i /><i /><i /></span> Thinking
+              </p>
+            )}
           </div>
 
           <form
@@ -251,7 +293,21 @@ export function AssistantLauncher() {
               ))}
             </div>
             {voiceError && <p role="alert" className="mb-2 text-xs text-red-300">{voiceError}</p>}
-            {listening && <p role="status" className="mb-2 text-xs text-text-3">Listening… speak now.</p>}
+            {listening && (
+              <p role="status" className="mb-2 flex items-center gap-2 text-xs text-text-2">
+                <span className="mic-wave" aria-hidden="true"><i /><i /><i /><i /></span>
+                Listening — just speak.
+              </p>
+            )}
+            {voiceSupported && (
+              <button
+                type="button"
+                onClick={toggleAutoListen}
+                className="mb-2 text-[0.68rem] text-text-3 underline decoration-dotted underline-offset-2 hover:text-text-2"
+              >
+                {autoListen ? 'Turn off auto-listen' : 'Turn on auto-listen'}
+              </button>
+            )}
             <div className="flex gap-2">
             <input
               ref={inputRef}

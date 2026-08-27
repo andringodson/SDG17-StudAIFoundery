@@ -110,8 +110,19 @@ export async function POST(req: NextRequest) {
           frustration: true
         });
 
-      case 'explain_sdg17':
-        return respond({ text: `${prefix}${SDG17_EXPLAINER}`, suggestions: ['Give me an SDG 17 example', 'How does this platform work?'], actions: [{ label: 'Explore SDG 17 tools', href: '/#finance' }, { label: 'View the map', href: '/#map' }], topic: 'sdg17' });
+      case 'explain_sdg17': {
+        // Grounded rather than canned: the model gets the verified explainer
+        // and phrases an answer to what was actually asked, so follow-ups and
+        // narrower questions ("which pillar covers debt?") work instead of
+        // returning the same paragraph every time.
+        const llm = await askLlm(parsed.data.message, { grounding: SDG17_EXPLAINER });
+        return respond({
+          text: `${prefix}${llm?.text ?? SDG17_EXPLAINER}`,
+          suggestions: ['Give me an SDG 17 example', 'How does this platform work?'],
+          actions: [{ label: 'Explore SDG 17 tools', href: '/#finance' }, { label: 'View the map', href: '/#map' }],
+          topic: 'sdg17'
+        });
+      }
 
       case 'how_platform_works':
         return respond({ text: `${prefix}${PLATFORM_HELP}`, suggestions: ['Explain SDG 17', 'Help me build a project'], actions: [{ label: 'Explore the map', href: '/#map' }, { label: 'Build a partnership', href: '/#builder' }], topic: 'platform' });
@@ -187,11 +198,38 @@ export async function POST(req: NextRequest) {
 
       default: {
         const knowledge = await findAssistantAnswer(parsed.data.message);
+        const topicOf = (k: NonNullable<typeof knowledge>) =>
+          k.actions[0]?.href.includes('builder') ? 'builder' : k.actions[0]?.href.includes('map') ? 'map' : 'platform';
+
+        // A keyword hit no longer answers on its own. Matching 'trade' tells
+        // us the platform MIGHT be relevant, not that the person meant the
+        // SDG 17 pillar — "what is the US-China trade war" used to return the
+        // pillar definition. The match is handed to the model as grounding
+        // and it decides; only if the model is unavailable does the canned
+        // text answer directly.
+        if (knowledge && isLlmConfigured()) {
+          const llm = await askLlm(parsed.data.message, {
+            previousTopic: parsed.data.previousTopic,
+            grounding: knowledge.text
+          });
+          await logAiAction({
+            userId: session?.userId ?? null, role, toolName: 'llmGrounded',
+            permissionDecision: 'allowed', resultStatus: llm ? 'success' : 'error'
+          });
+          if (llm) return respond({
+            text: `${prefix}${llm.text}`,
+            actions: knowledge.actions,
+            suggestions: ['Explain SDG 17', 'How does this platform work?', 'I need more help'],
+            topic: topicOf(knowledge),
+            disclaimer: llm.usedDisclaimer
+          });
+        }
+
         if (knowledge) return respond({
           text: `${prefix}${knowledge.text}`,
           actions: knowledge.actions,
           suggestions: ['Explain SDG 17', 'How does this platform work?', 'I need more help'],
-          topic: knowledge.actions[0]?.href.includes('builder') ? 'builder' : knowledge.actions[0]?.href.includes('map') ? 'map' : 'platform'
+          topic: topicOf(knowledge)
         });
         if (parsed.data.previousTopic === 'sdg17' && /\b(example|idea|sample)\b/i.test(parsed.data.message)) return respond({
           text: `${prefix}An SDG 17 example is a university, local government, solar company, and community group sharing funding, skills, and technology to install and maintain solar-powered classrooms. The Partnership Builder can help you compare stakeholder choices and a budget for this kind of strategy.`,
