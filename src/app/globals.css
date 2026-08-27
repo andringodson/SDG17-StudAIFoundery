@@ -291,6 +291,28 @@ body {
   background: rgb(7 34 44 / 0.92);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08), 0 0 18px rgb(0 174 214 / 0.2);
 }
+.hero-stats {
+  position: relative;
+  overflow: hidden;
+  padding: 0.75rem;
+  border: 1px solid rgb(119 219 247 / 0.18);
+  border-radius: 1.25rem;
+  background: linear-gradient(115deg, rgb(0 174 214 / 0.13), transparent 42%), radial-gradient(circle at 80% 10%, rgb(139 92 246 / 0.16), transparent 35%), rgb(14 15 16 / 0.88);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 20px 60px rgb(0 0 0 / 0.22);
+  backdrop-filter: blur(10px);
+}
+.hero-stats::before {
+  position: absolute;
+  inset: 0;
+  content: '';
+  pointer-events: none;
+  opacity: 0.34;
+  background-image: linear-gradient(rgb(104 225 252 / 0.1) 1px, transparent 1px), linear-gradient(90deg, rgb(104 225 252 / 0.1) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(90deg, black, transparent 82%);
+}
+.hero-stat { position: relative; z-index: 1; border: 1px solid rgb(255 255 255 / 0.09); background: rgb(0 0 0 / 0.22); }
+.hero-stat__index { color: #72dff6; text-shadow: 0 0 12px rgb(0 174 214 / 0.55); }
 .assistant-chat-scroll {
   scrollbar-width: thin;
   scrollbar-color: rgb(0 174 214 / 0.65) transparent;

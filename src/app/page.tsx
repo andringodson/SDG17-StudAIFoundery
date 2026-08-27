@@ -38,10 +38,10 @@ export default function HomePage() {
           </a>
         </div>
 
-        <dl className="mt-6 grid gap-6 border-t border-line pt-8 sm:grid-cols-3">
+        <dl className="hero-stats mt-6 grid gap-3 sm:grid-cols-3">
           {STATS.map((s) => (
-            <div key={s.n} className="flex items-start gap-3">
-              <span className="font-mono text-sm text-text-3">{s.n}</span>
+            <div key={s.n} className="hero-stat flex items-start gap-3 rounded-xl px-4 py-4">
+              <span className="hero-stat__index font-mono text-sm">{s.n}</span>
               <div>
                 <dd className="font-mono text-3xl font-extrabold tracking-tight">{s.value}</dd>
                 <dt className="text-sm text-text-3">{s.label}</dt>
