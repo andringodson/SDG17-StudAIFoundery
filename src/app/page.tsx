@@ -20,9 +20,9 @@ export default function HomePage() {
     <main id="main" className="mx-auto w-[min(100%-2.5rem,72rem)] pb-32 pt-7 sm:pt-8">
       {/* HERO — bold headline, numbered stat callouts (metacci/nbnzia-inspired) */}
       <section className="grid gap-7 py-14 sm:py-20">
-        <p className="inline-flex w-fit items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-text-3">
-          <span className="num-badge h-9 w-9 text-lg">17</span>
-          United Nations Sustainable Development Goal
+        <p className="hero-eyebrow inline-flex w-fit items-center gap-3 text-xs font-bold uppercase tracking-[0.16em] text-text-3">
+          <span className="num-badge hero-eyebrow__number h-10 w-10 text-lg">17</span>
+          <span>United Nations Sustainable Development Goal</span>
         </p>
         <HeroTitle />
         <p className="max-w-[62ch] text-lg text-text-2 sm:text-xl">

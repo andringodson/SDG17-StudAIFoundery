@@ -265,3 +265,33 @@ body {
 }
 .hero-cursor--done { animation: none; opacity: 0; }
 @keyframes typingCursor { 50% { opacity: 0; } }
+
+.hero-eyebrow {
+  position: relative;
+  min-height: 2.8rem;
+  padding: 0.18rem 1rem 0.18rem 0.18rem;
+  border: 1px solid rgb(129 226 255 / 0.16);
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgb(0 174 214 / 0.1), rgb(255 255 255 / 0.015) 62%, transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 0 28px rgb(0 174 214 / 0.06);
+}
+.hero-eyebrow::after {
+  position: absolute;
+  top: 50%;
+  right: -3.4rem;
+  width: 2.7rem;
+  height: 1px;
+  content: '';
+  background: linear-gradient(90deg, rgb(71 217 246 / 0.55), transparent);
+}
+.hero-eyebrow__number {
+  flex: none;
+  color: #ddf9ff;
+  border-color: rgb(74 219 249 / 0.7);
+  background: rgb(7 34 44 / 0.92);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08), 0 0 18px rgb(0 174 214 / 0.2);
+}
+@media (max-width: 640px) {
+  .hero-eyebrow { max-width: 100%; padding-right: 0.75rem; font-size: 0.63rem; letter-spacing: 0.12em; }
+  .hero-eyebrow::after { display: none; }
+}
