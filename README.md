@@ -35,16 +35,20 @@ The web app and the real-time server are **two separate deployables** on purpose
 
 Nothing below is optional if you want the backend features live, but the frontend, all four simulators, and the status bar work today with **zero** of these configured — every API route degrades to a clear 503 instead of crashing when its dependency is missing.
 
-### 1. Database — Supabase (free tier)
+### 1. Database — Neon (free tier, serverless Postgres)
 
-1. Create a project at [supabase.com](https://supabase.com).
-2. Project Settings → Database → Connection string → **URI** (Session mode). Copy it.
-3. Put it in `.env.local` as `DATABASE_URL=...` (append `?sslmode=require` if not already present) and in `server/.env`.
+The app talks to plain Postgres over the `pg` driver — nothing in the schema or the query layer is Supabase-specific, so any Postgres 14+ works. **Neon** is the recommended default: serverless (scales to zero between requests, so you don't pay/idle for a database that's mostly quiet), connection-pooled out of the box (its `-pooler` host batches connections instead of opening a fresh one per request — the thing that actually matters for "fast" under real traffic), and instant to provision.
+
+1. Create a project at [console.neon.tech](https://console.neon.tech) (or, from this repo already linked to Vercel: **Vercel dashboard → Storage → Marketplace Database Providers → Neon** — one click, billed through the same Vercel account, no separate signup).
+2. Copy the **pooled** connection string (the one with `-pooler` in the hostname) — it already includes `?sslmode=require`.
+3. Put it in `.env.local` as `DATABASE_URL=...` and in `server/.env`.
 4. Apply the schema:
    ```bash
    npm run db:migrate
    ```
    (Re-running this is safe — every statement in `db/schema.sql` is idempotent.)
+
+Prefer Supabase instead? Its connection string works unchanged — paste it into the same `DATABASE_URL` and run the same migration. The schema detects which platform-specific roles exist (`service_role`, `anon`, `authenticated`) and only creates the matching RLS policies, so the same file applies cleanly either way.
 
 ### 2. Sessions — a JWT secret
 
@@ -58,6 +62,8 @@ Put the output in `.env.local` as `JWT_SECRET=...`.
 1. Create an account at [resend.com](https://resend.com), grab an API key.
 2. `.env.local`: `RESEND_API_KEY=...`
 3. Without this, OTP codes print to the server console instead of emailing — useful for local dev.
+
+The same key also powers: password reset emails, the support-request confirmation email, and a **login alert email** sent on every successful sign-in (password or OAuth) so an account owner notices a sign-in they didn't make. All three degrade the same way — logged to the server console instead of sent — if `RESEND_API_KEY` isn't set.
 
 ### 4. Telegram bot — @BotFather
 
@@ -88,7 +94,25 @@ The routes and account-linking logic are fully built (`src/lib/oauth.ts`, `src/a
 
 Until both env vars for a provider are set, `/api/auth/oauth/status` reports it as unavailable and its button on `/auth/login` stays disabled with an explanatory tooltip — never faked as working. Once configured, signing in finds an existing account by email and links the provider to it, or creates a new `general_user` account with the email marked verified (Google/Facebook already proved it).
 
-### 8. Admin console access
+### 8. Assistant LLM fallback — Groq (free, open-weight models)
+
+The assistant works fully without this (rule-based intents + keyword knowledge base). This adds one more tier on top: an open-ended, grounded answer from an open-source model, for questions the rule-based layer doesn't recognise.
+
+1. Create a free account at [console.groq.com](https://console.groq.com) — no credit card required — and grab an API key.
+2. `.env.local`: `GROQ_API_KEY=...` (optionally `GROQ_MODEL=...`, defaults to `llama-3.3-70b-versatile`).
+3. Groq runs open-source models (Llama 3.x, Gemma 2, etc.) on inference hardware built specifically for low latency — it's usually the fastest hosted option for this class of model.
+
+This tier is read-only prose: the assistant never gives it tool-calling access, so every action it can actually perform (checking your profile/points/pledges, creating a reminder) still runs through the same permission-checked, audit-logged path as before — see `src/lib/assistant/llm.ts`.
+
+### 9. SMS confirmations — Twilio (optional)
+
+The support form's phone number field works today (it's stored either way); this is only what makes an SMS confirmation actually send.
+
+1. Create an account at [twilio.com](https://twilio.com) (requires identity/payment verification — this step needs a human) and get a phone number.
+2. `.env.local`: `TWILIO_ACCOUNT_SID=...`, `TWILIO_AUTH_TOKEN=...`, `TWILIO_FROM_NUMBER=...`.
+3. Without all three set, a submitted phone number is still saved with the ticket, but no text is sent — the support page says so plainly rather than claiming a text went out.
+
+### 10. Admin console access
 
 There's no self-service way to become an admin — that's deliberate; privilege escalation should never be a UI button. After `npm run db:migrate`, promote an existing account directly in the database:
 
@@ -139,8 +163,10 @@ npm run test:formulas
 | **Accessible status bar** | `src/components/statusbar/` | `role="progressbar"`, `aria-live`, Escape-to-cancel, expandable diagnostic log — drives every simulator's "Run" action |
 | **Live audience poll** | `LivePoll.tsx` | WebSocket when `NEXT_PUBLIC_WS_URL` is set, REST polling fallback otherwise |
 | **Pledge wall** | `PledgeWall.tsx` | Public, persisted via `/api/pledges` |
-| **Auth** | `AuthPanel.tsx` + `/api/auth/*` | Username/password, email OTP verification, Telegram account linking, Google/Facebook OAuth (inert until credentials are set) |
+| **Auth** | `AuthPanel.tsx` + `/api/auth/*` | Username/password, email OTP verification, Telegram account linking, Google/Facebook OAuth (inert until credentials are set), login-alert email on every sign-in |
 | **Admin console** | `src/app/dashboard/admin/` + `/api/admin/*` | Support ticket status triage, assistant knowledge-base (FAQ) management — role-gated server-side, no self-service admin signup |
+| **Assistant LLM fallback** | `src/lib/assistant/llm.ts` | Open-weight model via Groq (free tier) for open-ended, grounded answers — read-only, no tool-calling access; inert until `GROQ_API_KEY` is set |
+| **Support confirmations** | `/api/support` + `src/lib/mailer.ts` | Email always attempted when consented+provided; optional phone number field with SMS confirmation via Twilio once configured |
 
 ### The finance formulas (exact, from spec)
 

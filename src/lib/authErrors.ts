@@ -14,7 +14,7 @@ export function authErrorMessage(code: string | undefined): string {
     case 'too_many_attempts':
       return 'Too many login attempts. Please wait before trying again or reset your password.';
     case 'db_not_configured':
-      return 'The database is not connected yet — this needs a Supabase/Postgres project set up in .env.local.';
+      return 'The database is not connected yet — this needs a Postgres project (Neon recommended) set up in .env.local.';
     case 'network_error':
       return 'Unable to connect. Please check your internet connection and try again.';
     default:

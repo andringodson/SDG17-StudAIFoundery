@@ -7,6 +7,7 @@ import {
   logAiAction, formatBadgeCount
 } from '@/lib/assistant/tools';
 import { SDG17_EXPLAINER, PLATFORM_HELP, DISCLAIMER, detectAssistantLanguage, findAssistantAnswer, languagePreface, type AssistantAction, type AssistantLanguage } from '@/lib/assistant/knowledge';
+import { askLlm, isLlmConfigured } from '@/lib/assistant/llm';
 import { handleApiError } from '@/lib/apiError';
 import { formatCount } from '@/lib/inr';
 
@@ -173,6 +174,21 @@ export async function POST(req: NextRequest) {
           actions: [{ label: 'Open Partnership Builder', href: '/#builder' }],
           topic: 'sdg17'
         });
+
+        // Last tier before giving up: an open-weight LLM (Groq, free tier),
+        // grounded to real platform facts and never given tool-calling
+        // access — see src/lib/assistant/llm.ts. Silently skipped (falls
+        // through to the generic response below) if GROQ_API_KEY isn't set,
+        // or if the call fails for any reason.
+        if (isLlmConfigured()) {
+          const llm = await askLlm(parsed.data.message, { previousTopic: parsed.data.previousTopic });
+          await logAiAction({
+            userId: session?.userId ?? null, role, toolName: 'llmFallback',
+            permissionDecision: 'allowed', resultStatus: llm ? 'success' : 'error'
+          });
+          if (llm) return respond({ text: `${prefix}${llm.text}`, suggestions: ['Explain SDG 17', 'How does this platform work?', 'I need more help'], disclaimer: llm.usedDisclaimer });
+        }
+
         return respond({
           text: `${prefix}I couldn’t find a clear answer to that question. I can help with platform navigation, SDG 17, the Partnership Builder, or your own points and pledges.`,
           suggestions: suggestionsFor(role),

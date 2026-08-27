@@ -15,7 +15,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 async function main() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
-    console.error('DATABASE_URL is not set. Create a Supabase/Postgres project and set it in .env.local.');
+    console.error('DATABASE_URL is not set. Create a Postgres project (Neon recommended — console.neon.tech) and set it in .env.local.');
     process.exit(1);
   }
 

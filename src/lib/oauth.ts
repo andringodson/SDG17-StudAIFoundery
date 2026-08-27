@@ -104,7 +104,7 @@ export async function exchangeFacebookCode(code: string): Promise<OAuthProfile> 
   return { providerAccountId: info.id, email: info.email ?? null, name: info.name ?? null };
 }
 
-interface LinkedUser { id: string; username: string; role: 'company' | 'investor' | 'general_user' | 'admin' | 'compliance_admin'; session_version: number }
+interface LinkedUser { id: string; username: string; email: string | null; role: 'company' | 'investor' | 'general_user' | 'admin' | 'compliance_admin'; session_version: number }
 
 /**
  * Links or creates a user for a verified OAuth profile:
@@ -118,14 +118,14 @@ interface LinkedUser { id: string; username: string; role: 'company' | 'investor
  */
 export async function findOrCreateOAuthUser(provider: OAuthProvider, profile: OAuthProfile): Promise<LinkedUser> {
   const linked = await query<LinkedUser>(
-    `SELECT u.id, u.username, u.role, u.session_version FROM oauth_accounts o
+    `SELECT u.id, u.username, u.email, u.role, u.session_version FROM oauth_accounts o
      JOIN users u ON u.id = o.user_id WHERE o.provider = $1 AND o.provider_account_id = $2`,
     [provider, profile.providerAccountId]
   );
   if (linked[0]) return linked[0];
 
   if (profile.email) {
-    const byEmail = await query<LinkedUser>('SELECT id, username, role, session_version FROM users WHERE email = $1', [profile.email]);
+    const byEmail = await query<LinkedUser>('SELECT id, username, email, role, session_version FROM users WHERE email = $1', [profile.email]);
     if (byEmail[0]) {
       await query(
         'INSERT INTO oauth_accounts (user_id, provider, provider_account_id, email) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING',
@@ -144,7 +144,7 @@ export async function findOrCreateOAuthUser(provider: OAuthProvider, profile: OA
   const passwordHash = await hashPassword(crypto.randomBytes(32).toString('hex'));
   const created = await query<LinkedUser>(
     `INSERT INTO users (username, email, password_hash, role, full_name, profile_completed_pct, is_email_verified)
-     VALUES ($1, $2, $3, 'general_user', $4, 20, $5) RETURNING id, username, role, session_version`,
+     VALUES ($1, $2, $3, 'general_user', $4, 20, $5) RETURNING id, username, email, role, session_version`,
     [username, profile.email, passwordHash, profile.name ?? username, Boolean(profile.email)]
   );
   const user = created[0]!;

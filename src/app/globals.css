@@ -125,8 +125,27 @@ body {
    point of this treatment is that it reads as one confident, restrained
    action rather than a decorated one.
    --------------------------------------------------------------------------- */
+/* position lives in @layer components so any Tailwind positioning utility
+   (fixed/absolute/sticky) on the same element always wins.
+
+   Two separate cascade rules bite here, and only fixing both works:
+   1. Unlayered styles beat ANY layered style regardless of specificity — so
+      leaving this rule outside a layer meant it won even at :where()'s zero
+      specificity, since Tailwind v4 emits utilities inside @layer utilities.
+   2. Within layers, later-declared layers win — and Tailwind orders
+      components before utilities, so .fixed correctly overrides this.
+
+   Without this, .glow-btn's position: relative silently beat the `fixed`
+   class on the "Stud AI" launcher button, rendering it in normal document
+   flow at the page bottom instead of pinned to the viewport corner. */
+@layer components {
+  .glow-btn,
+  .interactive-outline {
+    position: relative;
+  }
+}
+
 .glow-btn {
-  position: relative;
   overflow: hidden;
   background: var(--color-text);
   color: #08090a;
@@ -160,7 +179,6 @@ body {
 }
 
 .interactive-outline {
-  position: relative;
   overflow: hidden;
   transition: border-color 0.22s ease, background-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s cubic-bezier(.2, .8, .2, 1);
 }

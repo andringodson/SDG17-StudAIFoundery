@@ -1,7 +1,9 @@
 -- =============================================================================
 -- SDG 17 Global Partnership Platform — schema
--- Target: Supabase / any Postgres 14+. Run this once against a fresh database
--- (Supabase SQL Editor, or `npm run db:migrate` with DATABASE_URL set).
+-- Target: Neon (recommended — serverless Postgres, pools connections, scales
+-- to zero) or any Postgres 14+, Supabase included. Run this once against a
+-- fresh database with `npm run db:migrate` (DATABASE_URL set), or paste it
+-- into your provider's SQL console.
 -- =============================================================================
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto"; -- gen_random_uuid()
@@ -174,6 +176,7 @@ CREATE TABLE IF NOT EXISTS support_tickets (
     description TEXT NOT NULL,
     current_page VARCHAR(255),
     contact_email VARCHAR(255),
+    contact_phone VARCHAR(20),
     contact_consent BOOLEAN NOT NULL DEFAULT FALSE,
     status VARCHAR(24) NOT NULL DEFAULT 'received'
         CHECK (status IN ('received', 'in_review', 'resolved', 'closed')),
@@ -222,10 +225,19 @@ CREATE INDEX IF NOT EXISTS idx_assistant_faqs_active ON assistant_faqs (is_activ
 
 -- -----------------------------------------------------------------------------
 -- Row-Level Security
--- The app talks to Postgres with the service-role connection string from API
--- routes only (never from the browser), so RLS here is a defense-in-depth
--- backstop, not the primary access control. Policies allow the service role
--- full access and deny anon/authenticated roles by default.
+-- The app talks to Postgres with one connection string from API routes only
+-- (never from the browser) — that connecting role is the actual primary
+-- access control (enforced again at the app layer via requireRole /
+-- requireApiRole). RLS here is defense-in-depth, not the primary gate.
+--
+-- This runs against plain Postgres (Neon, RDS, self-hosted) as well as
+-- Supabase, and those don't have the same built-in roles: Supabase provisions
+-- `service_role` / `anon` / `authenticated` via its auth extension; a vanilla
+-- Postgres database has none of them. Every policy below is created only if
+-- its target role actually exists, so this file applies cleanly on both —
+-- on a database with none of those roles, RLS is simply enabled with no
+-- policies, which is a safe default-deny for every role except the table
+-- owner (the one this app actually connects as).
 -- -----------------------------------------------------------------------------
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_progress ENABLE ROW LEVEL SECURITY;
@@ -242,53 +254,32 @@ ALTER TABLE oauth_accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE assistant_faqs ENABLE ROW LEVEL SECURITY;
 
 DO $$
+DECLARE
+    tbl TEXT;
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_users') THEN
-        CREATE POLICY service_role_all_users ON users FOR ALL TO service_role USING (true) WITH CHECK (true);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_progress') THEN
-        CREATE POLICY service_role_all_progress ON user_progress FOR ALL TO service_role USING (true) WITH CHECK (true);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_pledges') THEN
-        CREATE POLICY service_role_all_pledges ON pledges FOR ALL TO service_role USING (true) WITH CHECK (true);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_votes') THEN
-        CREATE POLICY service_role_all_votes ON audience_votes FOR ALL TO service_role USING (true) WITH CHECK (true);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_tokens') THEN
-        CREATE POLICY service_role_all_tokens ON telegram_link_tokens FOR ALL TO service_role USING (true) WITH CHECK (true);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_company_profiles') THEN
-        CREATE POLICY service_role_all_company_profiles ON company_profiles FOR ALL TO service_role USING (true) WITH CHECK (true);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_investor_profiles') THEN
-        CREATE POLICY service_role_all_investor_profiles ON investor_profiles FOR ALL TO service_role USING (true) WITH CHECK (true);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_reset_tokens') THEN
-        CREATE POLICY service_role_all_reset_tokens ON password_reset_tokens FOR ALL TO service_role USING (true) WITH CHECK (true);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_ai_audit_log') THEN
-        CREATE POLICY service_role_all_ai_audit_log ON ai_audit_log FOR ALL TO service_role USING (true) WITH CHECK (true);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_ai_reminders') THEN
-        CREATE POLICY service_role_all_ai_reminders ON ai_reminders FOR ALL TO service_role USING (true) WITH CHECK (true);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_support_tickets') THEN
-        CREATE POLICY service_role_all_support_tickets ON support_tickets FOR ALL TO service_role USING (true) WITH CHECK (true);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_oauth_accounts') THEN
-        CREATE POLICY service_role_all_oauth_accounts ON oauth_accounts FOR ALL TO service_role USING (true) WITH CHECK (true);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_assistant_faqs') THEN
-        CREATE POLICY service_role_all_assistant_faqs ON assistant_faqs FOR ALL TO service_role USING (true) WITH CHECK (true);
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN
+        FOREACH tbl IN ARRAY ARRAY[
+            'users', 'user_progress', 'pledges', 'audience_votes', 'telegram_link_tokens',
+            'company_profiles', 'investor_profiles', 'password_reset_tokens', 'ai_audit_log',
+            'ai_reminders', 'support_tickets', 'oauth_accounts', 'assistant_faqs'
+        ]
+        LOOP
+            IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_' || tbl AND tablename = tbl) THEN
+                EXECUTE format('CREATE POLICY %I ON %I FOR ALL TO service_role USING (true) WITH CHECK (true)', 'service_role_all_' || tbl, tbl);
+            END IF;
+        END LOOP;
     END IF;
 END $$;
 
--- Public, read-only pledge wall for anon/authenticated roles (if the app is
--- ever queried directly via Supabase's PostgREST instead of our API):
+-- Public, read-only pledge wall for anon/authenticated roles — only meaningful
+-- if the database is ever queried directly (e.g. Supabase's PostgREST)
+-- instead of exclusively through this app's API, and only created where
+-- those roles exist.
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'public_read_pledges') THEN
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon')
+       AND EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated')
+       AND NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'public_read_pledges') THEN
         CREATE POLICY public_read_pledges ON pledges FOR SELECT TO anon, authenticated USING (true);
     END IF;
 END $$;

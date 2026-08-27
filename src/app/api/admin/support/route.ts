@@ -13,12 +13,12 @@ export async function GET(req: NextRequest) {
     const status = new URL(req.url).searchParams.get('status');
     const rows = status && status !== 'all'
       ? await query(
-          `SELECT id, reference, category, description, current_page, contact_email, contact_consent, status, created_at, updated_at
+          `SELECT id, reference, category, description, current_page, contact_email, contact_phone, contact_consent, status, created_at, updated_at
            FROM support_tickets WHERE status = $1 ORDER BY created_at DESC LIMIT 200`,
           [status]
         )
       : await query(
-          `SELECT id, reference, category, description, current_page, contact_email, contact_consent, status, created_at, updated_at
+          `SELECT id, reference, category, description, current_page, contact_email, contact_phone, contact_consent, status, created_at, updated_at
            FROM support_tickets ORDER BY created_at DESC LIMIT 200`
         );
 

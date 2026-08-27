@@ -9,6 +9,7 @@ interface Ticket {
   description: string;
   current_page: string | null;
   contact_email: string | null;
+  contact_phone: string | null;
   contact_consent: boolean;
   status: 'received' | 'in_review' | 'resolved' | 'closed';
   created_at: string;
@@ -93,8 +94,10 @@ export function AdminSupportPanel() {
               </select>
             </div>
             <p className="mt-2 text-sm text-text-2">{t.description}</p>
-            {t.contact_consent && t.contact_email && (
-              <p className="mt-2 text-xs text-text-3">Contact (opted in): {t.contact_email}</p>
+            {t.contact_consent && (t.contact_email || t.contact_phone) && (
+              <p className="mt-2 text-xs text-text-3">
+                Contact (opted in): {[t.contact_email, t.contact_phone].filter(Boolean).join(' · ')}
+              </p>
             )}
           </div>
         ))}

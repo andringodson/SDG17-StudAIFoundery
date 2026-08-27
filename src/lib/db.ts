@@ -26,7 +26,7 @@ export function getPool(): Pool {
 
 export class DbNotConfiguredError extends Error {
   constructor() {
-    super('DATABASE_URL is not set. Create a Supabase/Postgres project and set it in .env.local — see README.md.');
+    super('DATABASE_URL is not set. Create a Postgres project (Neon recommended) and set it in .env.local — see README.md.');
     this.name = 'DbNotConfiguredError';
   }
 }

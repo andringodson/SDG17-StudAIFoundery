@@ -3,13 +3,14 @@ import { z } from 'zod';
 import { getSession } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { handleApiError } from '@/lib/apiError';
-import { sendSupportConfirmation } from '@/lib/mailer';
+import { sendSupportConfirmation, sendSupportSmsConfirmation } from '@/lib/mailer';
 
 const CreateBody = z.object({
   category: z.enum(['account', 'technical', 'partnership-builder', 'map', 'other']),
   description: z.string().min(10).max(4000),
   currentPage: z.string().max(255).optional(),
   contactEmail: z.string().email().optional(),
+  contactPhone: z.string().min(7).max(20).regex(/^[0-9+\-() ]+$/, 'Enter a valid phone number.').optional(),
   contactConsent: z.boolean().default(false)
 });
 
@@ -24,15 +25,32 @@ export async function POST(req: NextRequest) {
     const session = await getSession();
     const data = parsed.data;
     const rows = await query<{ reference: string; status: string }>(
-      `INSERT INTO support_tickets (reference, user_id, category, description, current_page, contact_email, contact_consent)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING reference, status`,
-      [reference(), session?.userId ?? null, data.category, data.description, data.currentPage ?? null, data.contactConsent ? data.contactEmail ?? null : null, data.contactConsent]
+      `INSERT INTO support_tickets (reference, user_id, category, description, current_page, contact_email, contact_phone, contact_consent)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING reference, status`,
+      [
+        reference(), session?.userId ?? null, data.category, data.description, data.currentPage ?? null,
+        data.contactConsent ? data.contactEmail ?? null : null,
+        data.contactConsent ? data.contactPhone ?? null : null,
+        data.contactConsent
+      ]
     );
     const ticket = rows[0]!;
-    const confirmation = data.contactConsent && data.contactEmail
+
+    // Email and SMS confirmations are attempted independently — one channel
+    // failing (or not being configured) never blocks the other, and neither
+    // ever blocks the ticket itself from being created.
+    const emailConfirmation = data.contactConsent && data.contactEmail
       ? await sendSupportConfirmation(data.contactEmail, ticket.reference, ticket.status)
       : { delivered: false };
-    return NextResponse.json({ ...ticket, confirmationDelivered: confirmation.delivered }, { status: 201 });
+    const smsConfirmation = data.contactConsent && data.contactPhone
+      ? await sendSupportSmsConfirmation(data.contactPhone, ticket.reference)
+      : { delivered: false };
+
+    return NextResponse.json({
+      ...ticket,
+      confirmationDelivered: emailConfirmation.delivered,
+      smsDelivered: smsConfirmation.delivered
+    }, { status: 201 });
   } catch (err) {
     return handleApiError(err);
   }

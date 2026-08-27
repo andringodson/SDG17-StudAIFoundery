@@ -4,6 +4,7 @@ import { query } from '@/lib/db';
 import { verifyPassword, setSessionCookie, type UserRole } from '@/lib/auth';
 import { handleApiError } from '@/lib/apiError';
 import { rateLimit } from '@/lib/rateLimit';
+import { sendLoginAlertEmail } from '@/lib/mailer';
 
 const Body = z.object({
   username: z.string().min(1),
@@ -13,6 +14,7 @@ const Body = z.object({
 interface UserRow {
   id: string;
   username: string;
+  email: string | null;
   password_hash: string;
   role: UserRole;
   session_version: number;
@@ -37,7 +39,7 @@ export async function POST(req: NextRequest) {
     }
 
     const rows = await query<UserRow>(
-      'SELECT id, username, password_hash, role, session_version, is_email_verified FROM users WHERE username = $1 OR email = $1',
+      'SELECT id, username, email, password_hash, role, session_version, is_email_verified FROM users WHERE username = $1 OR email = $1',
       [username]
     );
     const user = rows[0];
@@ -51,6 +53,16 @@ export async function POST(req: NextRequest) {
       role: user.role,
       sessionVersion: user.session_version
     });
+
+    // Best-effort: a failed/unconfigured alert must never fail the login
+    // itself — sendLoginAlertEmail already catches its own errors internally.
+    // Awaited (not fire-and-forget) because a serverless function can be
+    // frozen the instant its response is returned, which would silently
+    // drop an un-awaited send.
+    if (user.email) {
+      await sendLoginAlertEmail(user.email, { time: new Date().toISOString(), ip: ip !== 'local' ? ip : undefined });
+    }
+
     return NextResponse.json({
       user: { id: user.id, username: user.username, role: user.role, emailVerified: user.is_email_verified },
       requiresEmailVerification: !user.is_email_verified
