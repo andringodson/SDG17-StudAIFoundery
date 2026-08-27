@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import { authErrorMessage } from '@/lib/authErrors';
 
 type Result = { reference: string; status: string; confirmationDelivered: boolean; smsDelivered: boolean };
 
@@ -22,7 +23,7 @@ export default function SupportPage() {
     try {
       const response = await fetch('/api/support', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category, description, currentPage: document.referrer || window.location.pathname, contactEmail: email || undefined, contactPhone: phone || undefined, contactConsent: consent }) });
       const data = await response.json();
-      if (!response.ok) return setError(data.error ?? 'Unable to create the request.');
+      if (!response.ok) return setError(authErrorMessage(data.code ?? data.error));
       setResult(data); setDescription('');
     } catch { setError('Unable to create the request. Please try again.'); } finally { setBusy(false); }
   }
@@ -31,7 +32,7 @@ export default function SupportPage() {
     event.preventDefault(); setLookupResult('');
     const response = await fetch(`/api/support?reference=${encodeURIComponent(lookup.toUpperCase())}`);
     const data = await response.json();
-    setLookupResult(response.ok ? `${data.reference}: ${data.status.replace('_', ' ')}.` : data.error);
+    setLookupResult(response.ok ? `${data.reference}: ${data.status.replace('_', ' ')}.` : authErrorMessage(data.code ?? data.error));
   }
 
   return <main id="main" className="mx-auto w-[min(100%-2.5rem,52rem)] py-14 sm:py-20">

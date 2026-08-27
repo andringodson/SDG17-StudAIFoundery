@@ -14,10 +14,22 @@ export function authErrorMessage(code: string | undefined): string {
     case 'too_many_attempts':
       return 'Too many login attempts. Please wait before trying again or reset your password.';
     case 'db_not_configured':
-      return 'The database is not connected yet — this needs a Postgres project (Neon recommended) set up in .env.local.';
+      // Deliberately says nothing about DATABASE_URL, .env.local, or which
+      // database vendor is missing. This renders on public pages, so it is
+      // written for the person trying to sign up, not for whoever deploys
+      // the app — they get the full diagnostic in the server logs via
+      // DbNotConfiguredError instead.
+      return 'Accounts are temporarily unavailable while this platform is being set up. Everything else on the site works — please try again later.';
+    case 'server_error':
+      return 'Something went wrong on our side. Please try again.';
     case 'network_error':
       return 'Unable to connect. Please check your internet connection and try again.';
     default:
+      // Deliberate passthrough: unmapped strings reaching here are validation
+      // messages written for the person filling in the form ("Enter a valid
+      // phone number"). Raw internal errors never reach this point — see
+      // handleApiError, which replaces 500 detail with a generic message
+      // before it leaves the server.
       return code || 'Something went wrong. Please try again.';
   }
 }

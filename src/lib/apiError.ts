@@ -5,10 +5,21 @@ import { DbNotConfiguredError } from './db';
  * DATABASE_URL during scaffolding returns a clear 503, not a stack trace. */
 export function handleApiError(err: unknown): NextResponse {
   if (err instanceof DbNotConfiguredError) {
-    return NextResponse.json({ error: err.message, code: 'db_not_configured' }, { status: 503 });
+    // The setup instructions ("set DATABASE_URL in .env.local…") go to the
+    // deploy log, not over the wire — they were written for whoever runs the
+    // app, and this response renders on public pages. The client maps the
+    // code to visitor-facing copy; see authErrorMessage.
+    // eslint-disable-next-line no-console
+    console.error('[apiError]', err.message);
+    return NextResponse.json({ code: 'db_not_configured' }, { status: 503 });
   }
-  const message = err instanceof Error ? err.message : 'Unexpected error';
+  // The real error goes to the server log; the client gets a generic message.
+  // Raw `err.message` here can carry connection strings, table names, or
+  // driver internals — none of which belong on a public page.
   // eslint-disable-next-line no-console
   console.error(err);
-  return NextResponse.json({ error: message }, { status: 500 });
+  return NextResponse.json(
+    { error: 'Something went wrong on our side. Please try again.', code: 'server_error' },
+    { status: 500 }
+  );
 }
