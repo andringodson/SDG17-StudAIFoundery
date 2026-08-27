@@ -19,7 +19,7 @@ export default function HomePage() {
   return (
     <main id="main" className="mx-auto w-[min(100%-2.5rem,72rem)] pb-32 pt-7 sm:pt-8">
       {/* HERO — bold headline, numbered stat callouts (metacci/nbnzia-inspired) */}
-      <section className="grid gap-7 py-14 sm:py-20">
+      <section className="grid gap-7 pb-10 pt-14 sm:pb-12 sm:pt-20">
         <p className="hero-eyebrow inline-flex w-fit items-center gap-3 text-xs font-bold uppercase tracking-[0.16em] text-text-3">
           <span className="num-badge hero-eyebrow__number h-10 w-10 text-lg">17</span>
           <span>United Nations Sustainable Development Goal</span>
@@ -38,17 +38,17 @@ export default function HomePage() {
           </a>
         </div>
 
-        <dl className="hero-stats mt-6 grid gap-3 sm:grid-cols-3">
+        <dl className="hero-stats mt-8 grid gap-6 pt-6 sm:grid-cols-3 sm:gap-0">
           {STATS.map((s) => (
-            <div key={s.n} className="hero-stat flex items-start gap-3 rounded-xl px-4 py-4">
-              <span className="hero-stat__index font-mono text-sm">{s.n}</span>
-              <div>
-                <dd className="font-mono text-3xl font-extrabold tracking-tight">{s.value}</dd>
-                <dt className="text-sm text-text-3">{s.label}</dt>
-              </div>
+            <div key={s.n} className="hero-stat">
+              <dd className="hero-stat__value text-4xl font-semibold">{s.value}</dd>
+              <dt className="mt-1 text-sm text-text-3">{s.label}</dt>
             </div>
           ))}
         </dl>
+        <p className="text-xs text-text-3">
+          Illustrative figures for demonstration — not official UN data.
+        </p>
       </section>
 
       {/* MAP */}

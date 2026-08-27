@@ -115,31 +115,28 @@ export function AssistantLauncher() {
           aria-modal="true"
           className="fixed inset-0 z-[110] flex h-[100dvh] w-full flex-col overflow-hidden border border-line bg-surface-1 shadow-2xl sm:inset-auto sm:bottom-5 sm:right-5 sm:h-[min(38rem,calc(100dvh-2.5rem))] sm:w-[min(27rem,calc(100vw-2.5rem))] sm:rounded-2xl"
         >
-          <header className="flex items-start justify-between border-b border-line bg-[radial-gradient(circle_at_top_left,rgb(0_174_214_/_0.16),transparent_56%)] px-4 py-3">
-            <div className="flex gap-2.5">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-brand-cyan/40 bg-brand-deep/50 text-lg" aria-hidden="true">✦</span>
-              <div>
-              <p className="text-sm font-semibold">Stud AI Assistant</p>
-              <p className="mt-0.5 text-xs text-text-2">Your SDG 17 &amp; Platform Support Assistant</p>
-              <p className="flex items-center gap-1 text-xs text-text-3">
-                <span className="h-1.5 w-1.5 rounded-full bg-status-complete" /> Online · platform data only
+          <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">Stud AI</p>
+              <p className="flex items-center gap-1.5 text-xs text-text-3">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-status-complete" />
+                Answers from this platform&apos;s data
               </p>
-              </div>
             </div>
-            <div className="flex gap-1">
-              <button onClick={clearChat} className="rounded-lg px-2 py-1 text-xs text-text-3 hover:bg-white/5" title="Clear Chat">Clear</button>
-              <button onClick={() => setOpen(false)} aria-label="Close assistant" className="rounded-lg px-2 py-1 text-text-3 hover:bg-white/5">✕</button>
+            <div className="flex shrink-0 items-center gap-1">
+              <button onClick={clearChat} className="rounded-md px-2 py-1 text-xs text-text-3 hover:bg-white/5" title="Clear conversation">Clear</button>
+              <button onClick={() => setOpen(false)} aria-label="Close assistant" className="rounded-md px-2 py-1 text-text-3 hover:bg-white/5">✕</button>
             </div>
           </header>
 
           <div ref={scrollRef} className="assistant-chat-scroll min-h-0 flex-1 space-y-4 overflow-y-auto p-4" aria-live="polite">
             {messages.length === 0 && (
               <div>
-                <div className="rounded-xl border border-brand-cyan/25 bg-brand-deep/20 p-3 text-sm text-text-2">
-                  <p className="font-semibold text-text">Hello! 👋 I’m the Stud AI Assistant.</p>
-                  <p className="mt-1">I can help with the website, SDG 17, partnership strategies, and general support.</p>
-                </div>
-                <p className="mb-3 mt-4 text-sm text-text-2">Choose a topic to begin:</p>
+                <p className="text-sm text-text-2">
+                  I can help you navigate the platform, explain SDG 17, or look up your own
+                  progress and pledges.
+                </p>
+                <p className="mb-2 mt-5 text-xs font-medium uppercase tracking-[0.12em] text-text-3">Try asking</p>
                 <div className="grid gap-2">
                   {(STARTERS[role] ?? STARTERS.general_user!).map((s) => (
                     <button key={s} onClick={() => send(s)} className="rounded-lg border border-line px-3 py-2 text-left text-sm hover:bg-white/5">

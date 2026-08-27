@@ -39,7 +39,9 @@
   --color-series-4: #c98500;
   --color-series-5: #d55181;
 
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  /* --font-inter is injected by next/font in layout.tsx (self-hosted). The
+     rest of the stack is the fallback chain it matches metrics against. */
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
 }
 
@@ -268,9 +270,14 @@ body {
 @keyframes connectionFlow { to { stroke-dashoffset: -108; } }
 @keyframes nodePulse { 0%, 100% { opacity: 0.06; transform: scale(0.92); } 50% { opacity: 0.25; transform: scale(1.08); } }
 
+/* No min-height here: HeroTitle renders the full string invisibly in the same
+   grid cell, so the element already reserves its exact final height. The old
+   3.08em hardcoded three lines while the title wraps to two on desktop,
+   leaving a phantom empty line under the heading.
+   No text-shadow either — a glow behind display type is what made this read
+   as a template rather than a considered page. */
 .hero-title {
-  min-height: 3.08em;
-  text-shadow: 0 0 28px rgb(173 241 255 / 0.12), 0 0 70px rgb(0 174 214 / 0.08);
+  text-wrap: balance;
 }
 .hero-cursor {
   display: inline-block;
@@ -285,53 +292,47 @@ body {
 .hero-cursor--done { animation: none; opacity: 0; }
 @keyframes typingCursor { 50% { opacity: 0; } }
 
+/* Eyebrow: a plain label, not a glowing pill. The container, gradient, glow,
+   and trailing hairline were four decorations doing one job. */
 .hero-eyebrow {
-  position: relative;
-  min-height: 2.8rem;
-  padding: 0.18rem 1rem 0.18rem 0.18rem;
-  border: 1px solid rgb(129 226 255 / 0.16);
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgb(0 174 214 / 0.1), rgb(255 255 255 / 0.015) 62%, transparent);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 0 28px rgb(0 174 214 / 0.06);
-}
-.hero-eyebrow::after {
-  position: absolute;
-  top: 50%;
-  right: -3.4rem;
-  width: 2.7rem;
-  height: 1px;
-  content: '';
-  background: linear-gradient(90deg, rgb(71 217 246 / 0.55), transparent);
+  padding-left: 0.1rem;
 }
 .hero-eyebrow__number {
   flex: none;
-  color: #ddf9ff;
-  border-color: rgb(74 219 249 / 0.7);
-  background: rgb(7 34 44 / 0.92);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08), 0 0 18px rgb(0 174 214 / 0.2);
+  color: var(--color-text);
+  border-color: rgb(255 255 255 / 0.22);
+  background: transparent;
 }
+
+/* Stats: a quiet rule-separated row. Previously a rounded card carrying a
+   cyan border, two gradients, a purple radial, an inset highlight, a drop
+   shadow, a blur, and a grid-paper overlay — nine effects behind three
+   numbers. Now a single hairline above, and dividers between, so the figures
+   carry themselves. */
 .hero-stats {
+  border-top: 1px solid var(--color-line);
+  padding-top: 0.25rem;
+}
+.hero-stat {
   position: relative;
-  overflow: hidden;
-  padding: 0.75rem;
-  border: 1px solid rgb(119 219 247 / 0.18);
-  border-radius: 1.25rem;
-  background: linear-gradient(115deg, rgb(0 174 214 / 0.13), transparent 42%), radial-gradient(circle at 80% 10%, rgb(139 92 246 / 0.16), transparent 35%), rgb(14 15 16 / 0.88);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 20px 60px rgb(0 0 0 / 0.22);
-  backdrop-filter: blur(10px);
+  padding-left: 0;
 }
-.hero-stats::before {
-  position: absolute;
-  inset: 0;
-  content: '';
-  pointer-events: none;
-  opacity: 0.34;
-  background-image: linear-gradient(rgb(104 225 252 / 0.1) 1px, transparent 1px), linear-gradient(90deg, rgb(104 225 252 / 0.1) 1px, transparent 1px);
-  background-size: 32px 32px;
-  mask-image: linear-gradient(90deg, black, transparent 82%);
+@media (min-width: 640px) {
+  .hero-stat + .hero-stat {
+    padding-left: 2rem;
+    border-left: 1px solid var(--color-line);
+  }
 }
-.hero-stat { position: relative; z-index: 1; border: 1px solid rgb(255 255 255 / 0.09); background: rgb(0 0 0 / 0.22); }
-.hero-stat__index { color: #72dff6; text-shadow: 0 0 12px rgb(0 174 214 / 0.55); }
+.hero-stat__index {
+  color: var(--color-text-3);
+  font-variant-numeric: tabular-nums;
+}
+/* Display figures: proportional sans, not monospace. Tabular numerals keep
+   the columns aligned without the typewriter look. */
+.hero-stat__value {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
 .assistant-chat-scroll {
   scrollbar-width: thin;
   scrollbar-color: rgb(0 174 214 / 0.65) transparent;

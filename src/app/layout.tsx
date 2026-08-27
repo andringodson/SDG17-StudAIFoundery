@@ -1,5 +1,16 @@
 import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
+
+/* globals.css named 'Inter' in --font-sans but nothing ever loaded it, so the
+   whole site silently fell back to Helvetica/Arial. next/font downloads and
+   self-hosts it at build time — no runtime request to Google, and no layout
+   shift, since the fallback metrics are matched automatically. */
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter'
+});
 import { StatusBarProvider } from '@/components/statusbar/StatusBarContext';
 import { StatusBar } from '@/components/statusbar/StatusBar';
 import { Header } from '@/components/Header';
@@ -20,7 +31,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <body>
         <a className="skiplink" href="#main">
           Skip to main content
