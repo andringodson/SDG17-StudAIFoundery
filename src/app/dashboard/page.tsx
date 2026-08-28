@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth';
 const ROLE_HOME: Record<string, string> = {
   company: '/dashboard/company',
   investor: '/dashboard/investor',
+  government: '/dashboard/government',
   general_user: '/dashboard/general',
   admin: '/dashboard/admin',
   compliance_admin: '/dashboard/admin'

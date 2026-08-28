@@ -31,12 +31,14 @@ export default async function CompanyDashboardPage() {
       </div>
 
       <div className="mt-8 rounded-xl border border-line bg-surface-1/60 p-5">
-        <h2 className="font-semibold">What's real here today</h2>
+        <h2 className="font-semibold">Real-time partner connect</h2>
         <p className="mt-1 text-sm text-text-2">
-          Investor matching, pitch rooms, and messaging aren't built yet — this account currently gives you access to
-          the platform's SDG 17 tools below. The AI assistant (bottom right) can also help you navigate.
+          Browse registered investors and government agencies by sector, and message them directly — pitch decks and
+          document sharing still aren't built, but discovery and direct messaging are. The AI assistant (bottom
+          right) can also help you navigate.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
+          <a href="/connect" className="glow-btn inline-flex min-h-[40px] items-center rounded-lg px-4 text-sm font-semibold">Open Connect</a>
           <a href="/#builder" className="rounded-lg border border-line px-3 py-2 text-sm font-semibold hover:bg-white/5">Partnership Builder</a>
           <a href="/#finance" className="rounded-lg border border-line px-3 py-2 text-sm font-semibold hover:bg-white/5">Finance Simulator</a>
           <a href="/#map" className="rounded-lg border border-line px-3 py-2 text-sm font-semibold hover:bg-white/5">Partnership Map</a>

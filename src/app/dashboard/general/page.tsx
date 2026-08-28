@@ -30,6 +30,7 @@ export default async function GeneralDashboardPage() {
       </div>
 
       <div className="mt-8 flex flex-wrap gap-2">
+        <a href="/connect" className="glow-btn inline-flex min-h-[40px] items-center rounded-lg px-4 text-sm font-semibold">Connect with a partner</a>
         <a href="/#map" className="rounded-lg border border-line px-3 py-2 text-sm font-semibold hover:bg-white/5">Partnership Map</a>
         <a href="/#finance" className="rounded-lg border border-line px-3 py-2 text-sm font-semibold hover:bg-white/5">Finance Simulator</a>
         <a href="/#capacity" className="rounded-lg border border-line px-3 py-2 text-sm font-semibold hover:bg-white/5">Capacity Building</a>

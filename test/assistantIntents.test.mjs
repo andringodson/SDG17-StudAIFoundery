@@ -47,8 +47,14 @@ test('uses the verified knowledge base for platform navigation', () => {
   assert.equal(answer.actions[0].href, '/#map');
 });
 
-test('does not invent unavailable matching or messaging features', () => {
+test('points to the real Connect feature for matching and messaging', () => {
   const answer = findSupportKnowledge('How do I find an investor and send a message?');
+  assert.match(answer.text, /Connect is real/i);
+  assert.equal(answer.actions[0].href, '/connect');
+});
+
+test('does not invent unavailable pitch/document features', () => {
+  const answer = findSupportKnowledge('Can I share a pitch deck or documents?');
   assert.match(answer.text, /not certain this feature is currently available/i);
 });
 

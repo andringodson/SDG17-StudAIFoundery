@@ -53,6 +53,32 @@ export default function HomePage() {
         </p>
       </section>
 
+      {/* PROBLEM STATEMENT — grounds the platform in two concrete SDG 17
+          failure modes rather than the goal's abstract five pillars, and
+          points each one at the tool built to address it. */}
+      <Section id="why" eyebrow="Why this exists" title="Two problems this platform targets">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="glow-card rounded-xl border border-line bg-bg/40 p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-text-3">Problem 1 — Partner discovery</p>
+            <p className="mt-2 text-sm text-text-2">
+              Businesses, investors, and government agencies working toward the same SDG 17 targets often have no
+              searchable way to find each other — funding earmarked for multi-stakeholder partnerships (targets
+              17.16–17.17) goes unspent simply because the right parties never learn the others exist.
+            </p>
+            <a href="#map" className="tap mt-3 inline-block text-sm font-semibold underline">See the partnership map →</a>
+          </div>
+          <div className="glow-card rounded-xl border border-line bg-bg/40 p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-text-3">Problem 2 — Slow coordination</p>
+            <p className="mt-2 text-sm text-text-2">
+              Once a match is found, coordinating across time zones and departments over email adds months of delay
+              to mobilising finance or technology transfer (targets 17.3, 17.6–17.7), with no shared record of what
+              was agreed.
+            </p>
+            <Link href="/connect" className="tap mt-3 inline-block text-sm font-semibold underline">Open real-time Connect →</Link>
+          </div>
+        </div>
+      </Section>
+
       {/* MAP */}
       <Section id="map" eyebrow="Where the work happens" title="Global partnership map">
         <PartnershipMap />
@@ -118,6 +144,7 @@ export default function HomePage() {
             <ul className="mt-3 grid gap-2 text-sm">
               <li><Link href="/auth" className="text-text-2 hover:text-text">Sign in</Link></li>
               <li><Link href="/auth/register" className="text-text-2 hover:text-text">Create account</Link></li>
+              <li><Link href="/connect" className="text-text-2 hover:text-text">Connect with partners</Link></li>
               <li><Link href="/support" className="text-text-2 hover:text-text">Report an issue</Link></li>
             </ul>
           </nav>

@@ -7,6 +7,7 @@ import { Logo } from '@/components/Logo';
 const ROLE_LABEL: Record<string, string> = {
   company: 'Company Account',
   investor: 'Investor Account',
+  government: 'Government Account',
   general_user: 'Explorer Account',
   admin: 'Administrator',
   compliance_admin: 'Compliance Administrator'
@@ -58,11 +59,11 @@ export function DashboardShell({
               </div>
               <MenuItem href="/dashboard">My Profile</MenuItem>
               <MenuItem href="/dashboard">Dashboard</MenuItem>
-              <MenuItem disabled>Messages (coming soon)</MenuItem>
+              <MenuItem href="/connect">Connect &amp; Messages</MenuItem>
               <MenuItem disabled>Notifications (coming soon)</MenuItem>
               <MenuItem href="/dashboard/settings">Account Settings</MenuItem>
               <MenuItem href="/dashboard/settings">Security</MenuItem>
-              <MenuItem href="mailto:support@example.com">Help &amp; Support</MenuItem>
+              <MenuItem href="/support">Help &amp; Support</MenuItem>
               <div className="my-1 border-t border-line" />
               <button role="menuitem" onClick={logout} className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-300 hover:bg-white/5">
                 Log Out

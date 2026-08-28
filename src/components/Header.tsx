@@ -84,6 +84,15 @@ export function Header() {
           >
             Report issue
           </Link>
+          {signedIn && (
+            <Link
+              href="/connect"
+              onClick={() => setOpen(false)}
+              className="tap rounded-lg px-3 py-2 text-sm font-medium text-text-2 hover:bg-white/8 hover:text-text"
+            >
+              Connect
+            </Link>
+          )}
           <Link
             href={signedIn ? '/dashboard' : '/auth'}
             onClick={() => setOpen(false)}

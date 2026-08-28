@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 const COOKIE_NAME = 'sdg17_session';
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
-export type UserRole = 'company' | 'investor' | 'general_user' | 'admin' | 'compliance_admin';
+export type UserRole = 'company' | 'investor' | 'government' | 'general_user' | 'admin' | 'compliance_admin';
 
 export interface SessionPayload {
   userId: string;

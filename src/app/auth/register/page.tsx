@@ -19,6 +19,14 @@ const ROLES = [
     cta: 'Join as Investor'
   },
   {
+    href: '/auth/register/government',
+    icon: '🏛️',
+    title: 'Government / Agency',
+    blurb: 'For public agencies and departments coordinating aid, trade, or policy partnerships.',
+    features: ['Create Agency Profile', 'Discover Businesses', 'Real-Time Partner Connect', 'Publish Focus Areas', 'Communicate with Partners', 'Track Pledges'],
+    cta: 'Join as Agency'
+  },
+  {
     href: '/auth/register/general',
     icon: '🌍',
     title: 'General User',
@@ -31,7 +39,7 @@ const ROLES = [
 export default function RegisterRoleSelectPage() {
   return (
     <AuthShell title="How would you like to join?" wide>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {ROLES.map((r) => (
           <div key={r.href} className="glow-card flex flex-col rounded-xl border border-line bg-bg/40 p-5">
             <span className="text-2xl" aria-hidden="true">{r.icon}</span>

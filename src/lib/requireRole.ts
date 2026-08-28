@@ -25,6 +25,22 @@ export async function requireRole(...allowed: UserRole[]): Promise<SessionPayloa
   return session;
 }
 
+/** Same as requireRole but with no role allow-list — any signed-in account
+ * (company, investor, government, general_user) may pass. Used by pages
+ * that are shared across every role, like /connect, rather than gated to
+ * a specific dashboard. */
+export async function requireAnySession(): Promise<SessionPayload> {
+  const session = await getSession();
+  if (!session) redirect('/auth/login');
+
+  const rows = await query<{ session_version: number }>('SELECT session_version FROM users WHERE id = $1', [session.userId]);
+  if (!rows[0] || rows[0].session_version !== session.sessionVersion) {
+    await clearSessionCookie();
+    redirect('/auth/login?expired=1');
+  }
+  return session;
+}
+
 /** Same role/session-version check as requireRole, but for API route handlers:
  * returns a JSON 403/401 response instead of redirecting, since a fetch()
  * call has nowhere to be redirected to. Returns the session on success, or a

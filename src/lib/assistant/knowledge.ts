@@ -9,8 +9,9 @@ export const PLATFORM_HELP =
   'This platform has five interactive tools: the Finance Impact Simulator (budget → projects/impact), ' +
   'the Fair Trade Simulator, the Capacity Building learning paths, the Partnership Builder ' +
   '(pick stakeholders and a budget to get a scored strategy report), and the Global Partnership ' +
-  'Map. Use the nav bar at the top to jump to any of them, or ask me things like ' +
-  '"explain SDG 17" or "show my points."';
+  'Map. Signed-in accounts also get Connect: a directory of real registered businesses, investors, ' +
+  'and government agencies, ranked by sector overlap, with direct real-time messaging. Use the nav ' +
+  'bar at the top to jump to any of them, or ask me things like "explain SDG 17" or "show my points."';
 
 export const DISCLAIMER =
   'Educational Information Only: this response is generated from data already on this platform ' +
@@ -74,13 +75,18 @@ const SUPPORT_KNOWLEDGE: KnowledgeEntry[] = [
   },
   {
     keywords: ['register', 'registration', 'login', 'sign in', 'account', 'password', 'dashboard', 'profile'],
-    text: 'Choose Create Account, select Company, Investor, or General User, and complete the guided form. Role-specific dashboards are protected server-side. Email verification and profile-completion status are available after registration.',
+    text: 'Choose Create Account, select Company, Investor, Government, or General User, and complete the guided form. Role-specific dashboards are protected server-side. Email verification and profile-completion status are available after registration.',
     actions: [{ label: 'Create an account', href: '/auth/register' }, { label: 'Sign in', href: '/auth/login' }]
   },
   {
-    keywords: ['investor matching', 'find investor', 'find an investor', 'contact investor', 'contact company', 'messages', 'send a message', 'communication', 'pitch deck', 'pitch room', 'document sharing', 'notifications'],
-    text: 'I’m not certain this feature is currently available on the platform. Company and investor profiles and dashboards exist, but automated matching, in-platform messages, pitch rooms, document sharing, and notifications have not been released. I can help you use the available Partnership Builder instead.',
-    actions: [{ label: 'Open Partnership Builder', href: '/#builder' }]
+    keywords: ['investor matching', 'find investor', 'find an investor', 'contact investor', 'contact company', 'contact government', 'messages', 'send a message', 'communication', 'connect with business', 'connect with government', 'real time', 'real-time'],
+    text: 'Connect is real: sign in, open Connect from the nav bar, and browse a directory of registered businesses, investors, and government agencies — each listing is scored by how closely its sector overlaps yours. Tap one to open a direct message thread; replies show up within a few seconds. Pitch decks, document sharing, and automated notifications still aren\'t built.',
+    actions: [{ label: 'Open Connect', href: '/connect' }]
+  },
+  {
+    keywords: ['pitch deck', 'pitch room', 'document sharing', 'notifications'],
+    text: 'I\'m not certain this feature is currently available on the platform. Pitch rooms, document sharing, and automated notifications have not been released. Connect (direct messaging with businesses, investors, and government agencies) is available if that\'s what you\'re after.',
+    actions: [{ label: 'Open Connect', href: '/connect' }]
   },
   {
     keywords: ['not working', 'error', 'loading', 'problem', 'broken', 'cannot generate'],

@@ -33,9 +33,18 @@ const InvestorBody = Base.extend({
   preferredStage: z.string().min(1).max(60)
 });
 
+const GovernmentBody = Base.extend({
+  role: z.literal('government'),
+  agencyName: z.string().min(2).max(160),
+  department: z.string().max(120).optional(),
+  jurisdictionLevel: z.enum(['Local', 'Regional', 'National', 'International']),
+  country: z.string().min(1).max(80),
+  focusArea: z.string().min(1).max(80)
+});
+
 const GeneralBody = Base.extend({ role: z.literal('general_user') });
 
-const RoleBody = z.discriminatedUnion('role', [CompanyBody, InvestorBody, GeneralBody]);
+const RoleBody = z.discriminatedUnion('role', [CompanyBody, InvestorBody, GovernmentBody, GeneralBody]);
 
 /** Back-compat: the original quick-register panel (still live in the Action
  * Centre) posts {username, email, password} with no role or fullName. Fill
@@ -100,12 +109,18 @@ export async function POST(req: NextRequest) {
          VALUES ($1, $2, $3, $4, $5, $6)`,
         [user.id, data.investorType, data.organisationName ?? null, data.country, data.preferredSector, data.preferredStage]
       );
+    } else if (data.role === 'government') {
+      await query(
+        `INSERT INTO government_profiles (user_id, agency_name, department, jurisdiction_level, country, focus_area)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [user.id, data.agencyName, data.department ?? null, data.jurisdictionLevel, data.country, data.focusArea]
+      );
     }
 
     await setSessionCookie({
       userId: user.id,
       username: user.username,
-      role: user.role as 'company' | 'investor' | 'general_user',
+      role: user.role as 'company' | 'investor' | 'government' | 'general_user',
       sessionVersion: user.session_version
     });
 

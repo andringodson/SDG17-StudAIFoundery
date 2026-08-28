@@ -22,11 +22,12 @@ CREATE TABLE IF NOT EXISTS users (
     is_phone_verified BOOLEAN NOT NULL DEFAULT FALSE,
     otp_code VARCHAR(6),
     otp_expires_at TIMESTAMPTZ,
-    -- Role-based access. 'admin' / 'compliance_admin' exist as a destination
-    -- for future use but nothing provisions them yet — there is no admin
-    -- console in this build, so these roles have no extra privileges wired up.
+    -- Role-based access. 'government' registers agencies/departments the same
+    -- self-declared way 'company' and 'investor' already do — nothing here
+    -- verifies a government profile is a real authority, exactly as nothing
+    -- verifies a company profile is a real company.
     role VARCHAR(20) NOT NULL DEFAULT 'general_user'
-        CHECK (role IN ('company', 'investor', 'general_user', 'admin', 'compliance_admin')),
+        CHECK (role IN ('company', 'investor', 'government', 'general_user', 'admin', 'compliance_admin')),
     full_name VARCHAR(120),
     profile_completed_pct INT NOT NULL DEFAULT 0,
     -- Bumping this invalidates every JWT issued before the bump — the
@@ -34,6 +35,20 @@ CREATE TABLE IF NOT EXISTS users (
     session_version INT NOT NULL DEFAULT 1,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- CREATE TABLE IF NOT EXISTS above is a no-op against a database that
+-- already has a users table — which every real deployment of this project
+-- does — so the 'government' value in that CHECK never actually reaches an
+-- existing database without this. Named explicitly so re-running this block
+-- (safe, and it always does) finds and replaces exactly its own constraint.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'users_role_check') THEN
+        ALTER TABLE users DROP CONSTRAINT users_role_check;
+    END IF;
+    ALTER TABLE users ADD CONSTRAINT users_role_check
+        CHECK (role IN ('company', 'investor', 'government', 'general_user', 'admin', 'compliance_admin'));
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users (telegram_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
@@ -104,6 +119,17 @@ CREATE TABLE IF NOT EXISTS investor_profiles (
     country VARCHAR(80),
     preferred_sector VARCHAR(80),
     preferred_stage VARCHAR(60),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS government_profiles (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    agency_name VARCHAR(160) NOT NULL,
+    department VARCHAR(120),
+    jurisdiction_level VARCHAR(40) NOT NULL DEFAULT 'National'
+        CHECK (jurisdiction_level IN ('Local', 'Regional', 'National', 'International')),
+    country VARCHAR(80) NOT NULL,
+    focus_area VARCHAR(80) NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -224,6 +250,39 @@ CREATE TABLE IF NOT EXISTS assistant_faqs (
 CREATE INDEX IF NOT EXISTS idx_assistant_faqs_active ON assistant_faqs (is_active);
 
 -- -----------------------------------------------------------------------------
+-- 9. Real-time partner connect
+-- Direct messaging between any two signed-in accounts (business, government,
+-- investor, or explorer) — this is what the role-selection page's "Communicate
+-- with Investors/Companies" bullets actually refer to, and what the
+-- dashboards previously listed as "coming soon." One row per unordered pair
+-- of users; user_a is always the lexicographically smaller UUID so a pair
+-- can only ever create one thread regardless of who messages whom first.
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS connections (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_a UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_b UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    last_read_at_a TIMESTAMPTZ,
+    last_read_at_b TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CHECK (user_a < user_b),
+    UNIQUE (user_a, user_b)
+);
+
+CREATE INDEX IF NOT EXISTS idx_connections_user_a ON connections (user_a);
+CREATE INDEX IF NOT EXISTS idx_connections_user_b ON connections (user_b);
+
+CREATE TABLE IF NOT EXISTS connection_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    connection_id UUID NOT NULL REFERENCES connections(id) ON DELETE CASCADE,
+    sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    body TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_connection_messages_thread ON connection_messages (connection_id, created_at);
+
+-- -----------------------------------------------------------------------------
 -- Row-Level Security
 -- The app talks to Postgres with one connection string from API routes only
 -- (never from the browser) — that connecting role is the actual primary
@@ -252,6 +311,9 @@ ALTER TABLE ai_reminders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE support_tickets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE oauth_accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE assistant_faqs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE government_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE connections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE connection_messages ENABLE ROW LEVEL SECURITY;
 
 DO $$
 DECLARE
@@ -261,7 +323,8 @@ BEGIN
         FOREACH tbl IN ARRAY ARRAY[
             'users', 'user_progress', 'pledges', 'audience_votes', 'telegram_link_tokens',
             'company_profiles', 'investor_profiles', 'password_reset_tokens', 'ai_audit_log',
-            'ai_reminders', 'support_tickets', 'oauth_accounts', 'assistant_faqs'
+            'ai_reminders', 'support_tickets', 'oauth_accounts', 'assistant_faqs',
+            'government_profiles', 'connections', 'connection_messages'
         ]
         LOOP
             IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'service_role_all_' || tbl AND tablename = tbl) THEN
