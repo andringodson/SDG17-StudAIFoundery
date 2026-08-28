@@ -12,19 +12,31 @@ export async function sendOtpEmail(to: string, code: string): Promise<{ delivere
 
   if (!apiKey) {
     // eslint-disable-next-line no-console
-    console.log(`[mailer:dev-fallback] OTP for ${to} is ${code} (RESEND_API_KEY not set)`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[mailer:dev-fallback] OTP for ${to} is ${code} (RESEND_API_KEY not set)`);
+    }
     return { delivered: false };
   }
 
-  const resend = new Resend(apiKey);
-  await resend.emails.send({
-    from,
-    to,
-    subject: 'Your SDG 17 Hub verification code',
-    text: `Your verification code is ${code}. It expires in 30 minutes.\n\nDon't see this in your inbox next time? Check Spam/Junk — this address (onboarding@resend.dev) is a shared sending address, so some providers file it there.`,
-    html: `<p>Your verification code is <strong>${code}</strong>.</p><p>It expires in 30 minutes.</p><p style="color:#666;font-size:13px">Don't see this in your inbox next time? Check Spam/Junk — this address is a shared sending address, so some providers file it there.</p>`
-  });
-  return { delivered: true };
+  try {
+    const resend = new Resend(apiKey);
+    const { data, error } = await resend.emails.send({
+      from,
+      to,
+      subject: 'Your SDG 17 Hub verification code',
+      text: `Your verification code is ${code}. It expires in 30 minutes.`,
+      html: `<p>Your verification code is <strong>${code}</strong>.</p><p>It expires in 30 minutes.</p>`
+    });
+    if (error || !data?.id) {
+      console.error('[mailer] OTP rejected', error?.name ?? 'missing_message_id');
+      return { delivered: false };
+    }
+    // Accepted by the provider; inbox delivery cannot be guaranteed here.
+    return { delivered: true };
+  } catch {
+    console.error('[mailer] OTP request failed');
+    return { delivered: false };
+  }
 }
 
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<{ delivered: boolean }> {

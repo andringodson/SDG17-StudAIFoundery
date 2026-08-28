@@ -4,11 +4,17 @@ import { getSession } from '@/lib/auth';
 import { generateOtp } from '@/lib/otp';
 import { sendOtpEmail } from '@/lib/mailer';
 import { handleApiError } from '@/lib/apiError';
+import { rateLimit } from '@/lib/rateLimit';
 
 export async function POST() {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
+
+    const limit = rateLimit(`otp:${session.userId}`, 1, 45_000);
+    if (!limit.allowed) {
+      return NextResponse.json({ error: 'Please wait before requesting another code.', retryAfterSeconds: limit.retryAfterSeconds }, { status: 429 });
+    }
 
     const rows = await query<{ email: string | null }>('SELECT email FROM users WHERE id = $1', [session.userId]);
     const email = rows[0]?.email;

@@ -61,7 +61,10 @@ Put the output in `.env.local` as `JWT_SECRET=...`.
 
 1. Create an account at [resend.com](https://resend.com), grab an API key.
 2. `.env.local`: `RESEND_API_KEY=...`
-3. Without this, OTP codes print to the server console instead of emailing — useful for local dev.
+3. Verify a sending domain in Resend and set `RESEND_FROM="SDG 17 Hub <noreply@your-verified-domain>"`. The default `onboarding@resend.dev` sender is for testing with the Resend account owner's address only; it cannot send verification codes to other users.
+4. Set these variables in the hosting provider's production environment and redeploy. Without an API key, OTP codes print only in local development, never in production.
+
+Unverified password logins send a fresh verification code. Delivery failures do not destroy the session; the verification page shows the failure and lets the user retry. Run `npm run test:auth` for regression tests using mocked database/email boundaries. Production delivery still needs a real inbox check and inspection of Resend's email logs.
 
 The same key also powers: password reset emails, the support-request confirmation email, and a **login alert email** sent on every successful sign-in (password or OAuth) so an account owner notices a sign-in they didn't make. All three degrade the same way — logged to the server console instead of sent — if `RESEND_API_KEY` isn't set.
 

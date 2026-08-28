@@ -61,7 +61,7 @@ function LoginInner() {
         setError(authErrorMessage(data.code ?? data.error));
         return;
       }
-      router.push(data.requiresEmailVerification ? '/auth/verify-email' : (ROLE_HOME[data.user.role] ?? '/dashboard/general'));
+      router.push(data.requiresEmailVerification ? `/auth/verify-email?sent=${data.emailDelivery?.delivered ? '1' : '0'}` : (ROLE_HOME[data.user.role] ?? '/dashboard/general'));
     } catch {
       setError(authErrorMessage('network_error'));
     } finally {

@@ -4,7 +4,8 @@ import { query } from '@/lib/db';
 import { verifyPassword, setSessionCookie, type UserRole } from '@/lib/auth';
 import { handleApiError } from '@/lib/apiError';
 import { rateLimit } from '@/lib/rateLimit';
-import { sendLoginAlertEmail } from '@/lib/mailer';
+import { sendLoginAlertEmail, sendOtpEmail } from '@/lib/mailer';
+import { generateOtp } from '@/lib/otp';
 
 const Body = z.object({
   username: z.string().min(1),
@@ -59,13 +60,20 @@ export async function POST(req: NextRequest) {
     // Awaited (not fire-and-forget) because a serverless function can be
     // frozen the instant its response is returned, which would silently
     // drop an un-awaited send.
+    let emailDelivery;
+    if (user.email && !user.is_email_verified) {
+      const { code, expiresAt } = generateOtp();
+      await query('UPDATE users SET otp_code = $1, otp_expires_at = $2 WHERE id = $3', [code, expiresAt, user.id]);
+      emailDelivery = await sendOtpEmail(user.email, code);
+    }
     if (user.email) {
       await sendLoginAlertEmail(user.email, { time: new Date().toISOString(), ip: ip !== 'local' ? ip : undefined });
     }
 
     return NextResponse.json({
       user: { id: user.id, username: user.username, role: user.role, emailVerified: user.is_email_verified },
-      requiresEmailVerification: !user.is_email_verified
+      requiresEmailVerification: !user.is_email_verified,
+      emailDelivery
     });
   } catch (err) {
     return handleApiError(err);
