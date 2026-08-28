@@ -10,8 +10,10 @@ export const PLATFORM_HELP =
   'the Fair Trade Simulator, the Capacity Building learning paths, the Partnership Builder ' +
   '(pick stakeholders and a budget to get a scored strategy report), and the Global Partnership ' +
   'Map. Signed-in accounts also get Connect: a directory of real registered businesses, investors, ' +
-  'and government agencies, ranked by sector overlap, with direct real-time messaging. Use the nav ' +
-  'bar at the top to jump to any of them, or ask me things like "explain SDG 17" or "show my points."';
+  'and government agencies, ranked by sector overlap, with direct real-time messaging — and "Save this ' +
+  'partnership" (from the Builder or a Connect thread) adds it to My Partnerships on your dashboard, ' +
+  'where you move it from proposed to active to completed as it actually happens. Use the nav bar at ' +
+  'the top to jump to any of them, or ask me things like "explain SDG 17" or "show my points."';
 
 export const DISCLAIMER =
   'Educational Information Only: this response is generated from data already on this platform ' +
@@ -82,6 +84,11 @@ const SUPPORT_KNOWLEDGE: KnowledgeEntry[] = [
     keywords: ['investor matching', 'find investor', 'find an investor', 'contact investor', 'contact company', 'contact government', 'messages', 'send a message', 'communication', 'connect with business', 'connect with government', 'real time', 'real-time'],
     text: 'Connect is real: sign in, open Connect from the nav bar, and browse a directory of registered businesses, investors, and government agencies — each listing is scored by how closely its sector overlaps yours. Tap one to open a direct message thread; replies show up within a few seconds. Pitch decks, document sharing, and automated notifications still aren\'t built.',
     actions: [{ label: 'Open Connect', href: '/connect' }]
+  },
+  {
+    keywords: ['track partnership', 'my partnerships', 'save partnership', 'save this partnership', 'partnership status', 'active partnerships'],
+    text: 'My Partnerships is real too: hit "Save this partnership" on a Partnership Builder report, or "Save as partnership" inside a Connect thread, and it appears on your dashboard under My Partnerships. From there you mark it proposed → active → completed by hand as it actually progresses — nothing here updates itself.',
+    actions: [{ label: 'Open dashboard', href: '/dashboard' }, { label: 'Open Connect', href: '/connect' }]
   },
   {
     keywords: ['pitch deck', 'pitch room', 'document sharing', 'notifications'],

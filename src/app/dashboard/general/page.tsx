@@ -1,6 +1,7 @@
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/requireRole';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
+import { PartnershipsPanel } from '@/components/dashboard/PartnershipsPanel';
 import { formatCount } from '@/lib/inr';
 
 export default async function GeneralDashboardPage() {
@@ -37,6 +38,8 @@ export default async function GeneralDashboardPage() {
         <a href="/#builder" className="rounded-lg border border-line px-3 py-2 text-sm font-semibold hover:bg-white/5">Partnership Builder</a>
         <a href="/#action" className="rounded-lg border border-line px-3 py-2 text-sm font-semibold hover:bg-white/5">Action Centre</a>
       </div>
+
+      <PartnershipsPanel />
     </DashboardShell>
   );
 }

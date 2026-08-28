@@ -20,8 +20,19 @@ async function main() {
   }
 
   const sql = readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
+  // We pass ssl explicitly below, so strip sslmode= from the URL — otherwise
+  // pg-connection-string still parses it and prints a "SECURITY WARNING" on
+  // every connection (see src/lib/db.ts for the same fix on the app side).
+  let cleanedConnectionString = connectionString;
+  try {
+    const url = new URL(connectionString);
+    url.searchParams.delete('sslmode');
+    cleanedConnectionString = url.toString();
+  } catch {
+    // not a valid URL — leave as-is, the warning is cosmetic either way
+  }
   const client = new Client({
-    connectionString,
+    connectionString: cleanedConnectionString,
     ssl: connectionString.includes('sslmode=require') ? { rejectUnauthorized: false } : undefined
   });
 

@@ -24,6 +24,7 @@ export function EcosystemBuilder() {
   const [selected, setSelected] = useState<Stakeholder[]>([]);
   const [budget, setBudget] = useState(BUDGETS[2]!);
   const [reportKey, setReportKey] = useState(0);
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'signin' | 'error'>('idle');
   const { run } = useStatusBar();
 
   const result = useMemo(() => ecosystemModel(selected, budget), [selected, budget]);
@@ -33,6 +34,7 @@ export function EcosystemBuilder() {
   }
 
   async function generate() {
+    setSaveState('idle');
     try {
       await run({
         title: 'Building partnership matrix',
@@ -47,6 +49,26 @@ export function EcosystemBuilder() {
       setReportKey((k) => k + 1);
     } catch {
       // status bar already surfaced it
+    }
+  }
+
+  async function savePartnership() {
+    setSaveState('saving');
+    const stakeholderNames = selected.map((id) => STAKEHOLDERS.find((stakeholder) => stakeholder.id === id)?.name ?? id);
+    try {
+      const res = await fetch('/api/partnerships', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: 'builder',
+          title: stakeholderNames.join(' + '),
+          detail: `${result.score}% partnership strength · ${formatINR(budget)} budget`
+        })
+      });
+      if (res.status === 401) return setSaveState('signin');
+      setSaveState(res.ok ? 'saved' : 'error');
+    } catch {
+      setSaveState('error');
     }
   }
 
@@ -128,11 +150,25 @@ export function EcosystemBuilder() {
             <h4 className="text-sm font-bold uppercase tracking-wider text-text-3">Partnership strength</h4>
             <div className="flex items-center gap-3">
               <span className="font-mono text-3xl font-extrabold text-text">{result.score}%</span>
+              <button
+                type="button"
+                onClick={savePartnership}
+                disabled={saveState === 'saving' || saveState === 'saved'}
+                className="tap min-h-[38px] rounded-lg border border-line px-3 text-sm font-semibold text-text disabled:opacity-60"
+              >
+                {saveState === 'saved' ? 'Saved ✓' : saveState === 'saving' ? 'Saving…' : 'Save this partnership'}
+              </button>
               <button type="button" onClick={downloadReport} className="interactive-outline min-h-[38px] rounded-lg border border-brand-cyan/45 px-3 text-sm font-semibold text-text">
                 Download report (.doc)
               </button>
             </div>
           </div>
+          {saveState === 'signin' && (
+            <p className="text-sm text-text-3">
+              <a href="/auth/login" className="font-semibold underline">Sign in</a> to save this partnership to your dashboard.
+            </p>
+          )}
+          {saveState === 'error' && <p className="text-sm text-status-error">Couldn't save — try again in a moment.</p>}
           {result.warnings.length > 0 ? (
             <ul className="grid gap-2">
               {result.warnings.map((w, i) => (

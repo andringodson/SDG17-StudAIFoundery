@@ -8,15 +8,31 @@ import { Pool, type QueryResultRow } from 'pg';
  */
 let pool: Pool | null = null;
 
+/** We always pass our own explicit `ssl` option below, so a `sslmode=…`
+ * query param left over from Neon's copy-paste connection string is dead
+ * weight — but pg-connection-string still parses it and logs a scary
+ * "SECURITY WARNING" on every single connection, drowning out real errors
+ * in the production log. Stripping it here is silent and behaviourally a
+ * no-op (falls through unchanged if the string isn't a valid URL). */
+function withoutSslModeParam(connectionString: string): string {
+  try {
+    const url = new URL(connectionString);
+    url.searchParams.delete('sslmode');
+    return url.toString();
+  } catch {
+    return connectionString;
+  }
+}
+
 export function getPool(): Pool {
   if (pool) return pool;
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
+  const raw = process.env.DATABASE_URL;
+  if (!raw) {
     throw new DbNotConfiguredError();
   }
   pool = new Pool({
-    connectionString,
-    ssl: connectionString.includes('sslmode=require') || process.env.NODE_ENV === 'production'
+    connectionString: withoutSslModeParam(raw),
+    ssl: raw.includes('sslmode=require') || process.env.NODE_ENV === 'production'
       ? { rejectUnauthorized: false }
       : undefined,
     max: 5

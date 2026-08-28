@@ -47,11 +47,13 @@ export function ConnectHub({ selfRole }: { selfRole: string }) {
 
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [activeName, setActiveName] = useState('');
+  const [activeOther, setActiveOther] = useState<{ userId: string; role: string } | null>(null);
   const [messages, setMessages] = useState<Message[] | null>(null);
   const [compose, setCompose] = useState('');
   const [sending, setSending] = useState(false);
   const [draftBusy, setDraftBusy] = useState(false);
   const [draftNotice, setDraftNotice] = useState('');
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -114,11 +116,13 @@ export function ConnectHub({ selfRole }: { selfRole: string }) {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages]);
 
-  function openThread(id: string, name: string) {
+  function openThread(id: string, name: string, other: { userId: string; role: string }) {
     setActiveThreadId(id);
     setActiveName(name);
+    setActiveOther(other);
     setMessages(null);
     setDraftNotice('');
+    setSaveState('idle');
     setTab('messages');
   }
 
@@ -131,10 +135,30 @@ export function ConnectHub({ selfRole }: { selfRole: string }) {
       });
       const data = await res.json();
       if (!res.ok) return;
-      openThread(data.threadId, entry.orgName);
+      openThread(data.threadId, entry.orgName, { userId: entry.userId, role: entry.role });
       loadThreads();
     } catch {
       /* leave the directory open — the user can retry the tap */
+    }
+  }
+
+  async function savePartnership() {
+    if (!activeOther || saveState === 'saving' || saveState === 'saved') return;
+    setSaveState('saving');
+    try {
+      const res = await fetch('/api/partnerships', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: 'connect',
+          title: activeName,
+          detail: `${ROLE_LABEL[activeOther.role] ?? activeOther.role} · via Connect`,
+          partnerUserId: activeOther.userId
+        })
+      });
+      setSaveState(res.ok ? 'saved' : 'error');
+    } catch {
+      setSaveState('error');
     }
   }
 
@@ -219,7 +243,7 @@ export function ConnectHub({ selfRole }: { selfRole: string }) {
             {threads.map((t) => (
               <button
                 key={t.id}
-                onClick={() => openThread(t.id, t.otherName)}
+                onClick={() => openThread(t.id, t.otherName, { userId: t.otherUserId, role: t.otherRole })}
                 className={`tap mb-1 flex w-full items-start gap-2.5 rounded-lg p-2.5 text-left ${activeThreadId === t.id ? 'bg-white/10' : 'hover:bg-white/5'}`}
               >
                 <span className="mt-0.5 text-lg" aria-hidden="true">{ROLE_ICON[t.otherRole] ?? '👤'}</span>
@@ -301,8 +325,16 @@ export function ConnectHub({ selfRole }: { selfRole: string }) {
           <>
             <div className="flex items-center gap-2 border-b border-line p-3">
               <button onClick={() => setActiveThreadId(null)} className="tap rounded-lg border border-line px-2 py-1.5 text-sm sm:hidden" aria-label="Back to list">←</button>
-              <p className="font-semibold">{activeName}</p>
+              <p className="flex-1 truncate font-semibold">{activeName}</p>
+              <button
+                onClick={savePartnership}
+                disabled={saveState === 'saving' || saveState === 'saved'}
+                className="tap shrink-0 rounded-lg border border-line px-2.5 py-1.5 text-xs font-semibold hover:bg-white/5 disabled:opacity-60"
+              >
+                {saveState === 'saved' ? 'Saved ✓' : saveState === 'saving' ? 'Saving…' : '🧩 Save as partnership'}
+              </button>
             </div>
+            {saveState === 'error' && <p className="border-b border-line px-3 py-1.5 text-xs text-status-error">Couldn't save — try again.</p>}
 
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-3">
               {messages === null && <p className="text-sm text-text-3">Loading…</p>}

@@ -1,6 +1,7 @@
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/requireRole';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
+import { PartnershipsPanel } from '@/components/dashboard/PartnershipsPanel';
 import { formatCount } from '@/lib/inr';
 
 export default async function InvestorDashboardPage() {
@@ -46,6 +47,8 @@ export default async function InvestorDashboardPage() {
           <a href="/#builder" className="rounded-lg border border-line px-3 py-2 text-sm font-semibold hover:bg-white/5">Partnership Builder</a>
         </div>
       </div>
+
+      <PartnershipsPanel />
     </DashboardShell>
   );
 }
