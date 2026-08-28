@@ -11,6 +11,7 @@ Thumbs.db
 
 .next/
 out/
+tmp/
 next-env.d.ts
 !.env.example
 !server/.env.example

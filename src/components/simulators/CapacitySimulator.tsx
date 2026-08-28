@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { createCertificatePdf, downloadFile } from '@/lib/downloads';
 
 const ROLES = {
   student: { icon: '🧑‍🎓', name: 'Student', steps: ['SDG literacy foundations', 'Data analysis for impact', 'Campus partnership project', 'Youth policy advocacy', 'Lead a community pilot'] },
@@ -12,43 +13,8 @@ const ROLES = {
 
 type RoleId = keyof typeof ROLES;
 
-function pdfEscape(value: string) {
-  return value.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
-}
-
 function downloadCertificate(roleName: string) {
-  const date = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
-  const stream = [
-    'q', '0.02 0.05 0.08 rg', '0 0 842 595 re f',
-    '0 0.68 0.84 RG', '4 w', '35 35 772 525 re S',
-    '0.82 0.97 1 rg', 'BT', '/F2 15 Tf', '235 500 Td', '(SDG 17  |  GLOBAL PARTNERSHIP PLATFORM) Tj', 'ET',
-    '0.92 0.95 0.96 rg', 'BT', '/F2 38 Tf', '215 405 Td', '(Certificate of Completion) Tj', 'ET',
-    '0.7 0.78 0.82 rg', 'BT', '/F1 17 Tf', '273 350 Td', '(This certifies completion of the) Tj', 'ET',
-    '0.25 0.84 0.96 rg', 'BT', '/F2 25 Tf', `150 300 Td (${pdfEscape(roleName)} Learning Pathway) Tj`, 'ET',
-    '0.7 0.78 0.82 rg', 'BT', '/F1 14 Tf', `300 235 Td (Completed on ${pdfEscape(date)}) Tj`, 'ET',
-    '0.45 0.6 0.68 rg', 'BT', '/F1 11 Tf', '280 105 Td', '(Partnerships for the Goals) Tj', 'ET', 'Q'
-  ].join('\n');
-  const objects = [
-    '<< /Type /Catalog /Pages 2 0 R >>',
-    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>',
-    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
-    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>',
-    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`
-  ];
-  let pdf = '%PDF-1.4\n';
-  const offsets = [0];
-  objects.forEach((object, index) => { offsets.push(pdf.length); pdf += `${index + 1} 0 obj\n${object}\nendobj\n`; });
-  const xref = pdf.length;
-  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  offsets.slice(1).forEach((offset) => { pdf += `${String(offset).padStart(10, '0')} 00000 n \n`; });
-  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
-  const href = URL.createObjectURL(new Blob([pdf], { type: 'application/pdf' }));
-  const link = document.createElement('a');
-  link.href = href;
-  link.download = `sdg17-${roleName.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}-certificate.pdf`;
-  link.click();
-  URL.revokeObjectURL(href);
+  downloadFile(createCertificatePdf(roleName), 'application/pdf', `sdg17-${roleName.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}-certificate.pdf`);
 }
 
 export function CapacitySimulator() {

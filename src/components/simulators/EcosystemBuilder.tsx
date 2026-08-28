@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { ecosystemModel, type Stakeholder } from '@/lib/formulas';
 import { formatINR } from '@/lib/inr';
 import { useStatusBar } from '@/components/statusbar/StatusBarContext';
+import { createStrategyReportRtf, downloadFile } from '@/lib/downloads';
 
 const STAKEHOLDERS: { id: Stakeholder; icon: string; name: string; note: string }[] = [
   { id: 'government', icon: '🏛️', name: 'Government', note: 'Mandate, regulation, scale' },
@@ -15,10 +16,6 @@ const STAKEHOLDERS: { id: Stakeholder; icon: string; name: string; note: string 
 ];
 
 const BUDGETS = [1_00_000, 10_00_000, 1_00_00_000, 10_00_00_000, 50_00_00_000, 1_00_00_00_000];
-
-function escapeHtml(value: string) {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 export function EcosystemBuilder() {
   const [selected, setSelected] = useState<Stakeholder[]>([]);
@@ -74,16 +71,8 @@ export function EcosystemBuilder() {
 
   function downloadReport() {
     const stakeholderNames = selected.map((id) => STAKEHOLDERS.find((stakeholder) => stakeholder.id === id)?.name ?? id);
-    const warnings = result.warnings.length
-      ? `<ul>${result.warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join('')}</ul>`
-      : '<p>No structural gaps were detected in this partnership mix.</p>';
-    const documentHtml = `<!doctype html><html><head><meta charset="utf-8"><title>SDG 17 Partnership Strategy Report</title><style>body{font-family:Arial,sans-serif;color:#102a35;line-height:1.55;margin:48px}h1{color:#006f89;border-bottom:3px solid #00aed6;padding-bottom:12px}h2{color:#006f89;margin-top:28px}.score{font-size:42px;font-weight:bold;color:#007c96}.meta{color:#4c6470}li{margin:7px 0}</style></head><body><p class="meta">SDG 17 · Global Partnership Platform</p><h1>Partnership Strategy Report</h1><p class="meta">Generated ${new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</p><h2>Partnership strength</h2><p class="score">${result.score}%</p><h2>Selected stakeholders</h2><ul>${stakeholderNames.map((name) => `<li>${escapeHtml(name)}</li>`).join('')}</ul><h2>Budget allocation</h2><p>${escapeHtml(formatINR(budget))}</p><h2>Diagnostics</h2>${warnings}<h2>Next step</h2><p>Use these diagnostics to refine your partnership mix, then generate a new report to compare the result.</p></body></html>`;
-    const href = URL.createObjectURL(new Blob([documentHtml], { type: 'application/msword' }));
-    const link = document.createElement('a');
-    link.href = href;
-    link.download = 'sdg17-partnership-strategy-report.doc';
-    link.click();
-    URL.revokeObjectURL(href);
+    const report = createStrategyReportRtf({ stakeholderNames, budget: formatINR(budget), score: result.score, warnings: result.warnings });
+    downloadFile(report, 'application/rtf', 'sdg17-partnership-strategy-report.rtf');
   }
 
   return (
@@ -159,7 +148,7 @@ export function EcosystemBuilder() {
                 {saveState === 'saved' ? 'Saved ✓' : saveState === 'saving' ? 'Saving…' : 'Save this partnership'}
               </button>
               <button type="button" onClick={downloadReport} className="interactive-outline min-h-[38px] rounded-lg border border-brand-cyan/45 px-3 text-sm font-semibold text-text">
-                Download report (.doc)
+                Download editable report (.rtf)
               </button>
             </div>
           </div>

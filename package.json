@@ -10,7 +10,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test:auth": "node --test test/authFlow.test.mjs",
-    "test:formulas": "node --test test/formulas.test.mjs test/otp.test.mjs test/assistantIntents.test.mjs",
+    "test:formulas": "node --test test/formulas.test.mjs test/otp.test.mjs test/assistantIntents.test.mjs test/downloads.test.mjs",
     "db:migrate": "node db/migrate.mjs"
   },
   "dependencies": {
