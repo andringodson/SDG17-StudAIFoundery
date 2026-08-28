@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { generateOtp, verifyOtp, generateLinkToken, OTP_LENGTH } from '../src/lib/otp.ts';
+import { generateOtp, verifyOtp, generateLinkToken, OTP_LENGTH, OTP_TTL_MS } from '../src/lib/otp.ts';
 
 test('generateOtp produces a zero-padded code of the right length', () => {
   for (let i = 0; i < 50; i += 1) {
@@ -10,10 +10,10 @@ test('generateOtp produces a zero-padded code of the right length', () => {
   }
 });
 
-test('generateOtp sets an expiry 10 minutes out', () => {
+test('generateOtp sets an expiry OTP_TTL_MS out', () => {
   const now = new Date('2026-01-01T00:00:00Z');
   const { expiresAt } = generateOtp(now);
-  assert.equal(expiresAt.getTime() - now.getTime(), 10 * 60 * 1000);
+  assert.equal(expiresAt.getTime() - now.getTime(), OTP_TTL_MS);
 });
 
 test('verifyOtp: correct code before expiry passes', () => {

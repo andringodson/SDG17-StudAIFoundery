@@ -21,8 +21,8 @@ export async function sendOtpEmail(to: string, code: string): Promise<{ delivere
     from,
     to,
     subject: 'Your SDG 17 Hub verification code',
-    text: `Your verification code is ${code}. It expires in 10 minutes.`,
-    html: `<p>Your verification code is <strong>${code}</strong>.</p><p>It expires in 10 minutes.</p>`
+    text: `Your verification code is ${code}. It expires in 30 minutes.\n\nDon't see this in your inbox next time? Check Spam/Junk — this address (onboarding@resend.dev) is a shared sending address, so some providers file it there.`,
+    html: `<p>Your verification code is <strong>${code}</strong>.</p><p>It expires in 30 minutes.</p><p style="color:#666;font-size:13px">Don't see this in your inbox next time? Check Spam/Junk — this address is a shared sending address, so some providers file it there.</p>`
   });
   return { delivered: true };
 }

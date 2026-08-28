@@ -9,6 +9,7 @@ const RESEND_COOLDOWN_S = 45;
 export default function VerifyEmailPage() {
   const router = useRouter();
   const [email, setEmail] = useState<string | null>(null);
+  const [checkedSession, setCheckedSession] = useState(false);
   const [code, setCode] = useState('');
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
@@ -16,7 +17,11 @@ export default function VerifyEmailPage() {
   const [verified, setVerified] = useState(false);
 
   useEffect(() => {
-    fetch('/api/me').then((r) => r.json()).then((d) => setEmail(d.user?.email ?? null)).catch(() => {});
+    fetch('/api/me')
+      .then((r) => r.json())
+      .then((d) => setEmail(d.user?.email ?? null))
+      .catch(() => {})
+      .finally(() => setCheckedSession(true));
   }, []);
 
   useEffect(() => {
@@ -27,10 +32,19 @@ export default function VerifyEmailPage() {
 
   async function resend() {
     setNotice('');
+    setError('');
     const res = await fetch('/api/auth/otp/send', { method: 'POST' });
+    if (res.status === 401) {
+      // Not the same failure as "email isn't configured" — the earlier
+      // message here claimed exactly that, which sent people down the wrong
+      // path entirely when the real fix is just signing in again.
+      setError('Your sign-in has expired. Please sign in again to request a new code.');
+      setCooldown(0);
+      return;
+    }
     const data = await res.json();
     setNotice(data.delivered
-      ? 'A new code has been sent to your email.'
+      ? 'A new code has been sent to your email — check Spam/Junk if it doesn\'t show up in a minute or two.'
       : 'Email sending is not switched on for this site yet, so the code could not be delivered. Please contact the site owner to get your account verified.');
     setCooldown(RESEND_COOLDOWN_S);
   }
@@ -45,19 +59,41 @@ export default function VerifyEmailPage() {
     if (res.ok) {
       setVerified(true);
       setTimeout(() => router.push('/dashboard'), 1200);
-    } else {
-      const data = await res.json();
-      setError(data.error === 'expired' ? 'That code has expired — request a new one.' : 'That code is incorrect.');
+      return;
     }
+    if (res.status === 401) {
+      setError('Your sign-in has expired. Please sign in again to verify your email.');
+      return;
+    }
+    const data = await res.json();
+    setError(data.error === 'expired' ? 'That code has expired — request a new one.' : 'That code is incorrect.');
   }
 
   if (verified) {
     return <AuthShell title="Email verified"><p className="text-sm text-status-complete">Redirecting to your dashboard…</p></AuthShell>;
   }
 
+  // /api/me came back with no user: the session cookie is missing or expired,
+  // so every action below would 401. Say so plainly instead of letting the
+  // form fail silently into a misleading error.
+  if (checkedSession && !email) {
+    return (
+      <AuthShell title="Verify Your Email" description="You're signed out, so there's no account here to verify.">
+        <p className="mb-4 text-sm text-text-2">Sign in again and this page will pick up where you left off.</p>
+        <a href="/auth/login" className="glow-btn flex min-h-[44px] items-center justify-center rounded-lg font-semibold">
+          Sign in
+        </a>
+      </AuthShell>
+    );
+  }
+
   return (
-    <AuthShell title="Verify Your Email" description={email ? `We sent a verification code to: ${email}` : 'Sign in to verify your email.'}>
+    <AuthShell title="Verify Your Email" description={email ? `We sent a verification code to: ${email}` : 'Checking your session…'}>
       <div className="grid gap-4">
+        <p className="rounded-lg border border-line bg-bg/40 px-3 py-2 text-xs text-text-3">
+          Not in your inbox? Check <strong className="text-text-2">Spam/Junk</strong> — this platform currently sends
+          from a shared address (onboarding@resend.dev), which some providers file there. The code is valid for 30 minutes.
+        </p>
         <label className="grid gap-1.5 text-sm">
           <span className="font-semibold text-text-2">Verification code</span>
           <input

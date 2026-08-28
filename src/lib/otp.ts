@@ -5,7 +5,12 @@
  */
 
 export const OTP_LENGTH = 6;
-export const OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
+// 30 minutes, not 10: mail goes out from Resend's shared onboarding@resend.dev
+// address (no verified custom domain is configured), which providers like
+// Gmail commonly route to Spam on that shared sender's mixed reputation, not
+// because delivery failed. A code that expires in 10 minutes is routinely
+// dead before someone thinks to go check Spam for it.
+export const OTP_TTL_MS = 30 * 60 * 1000;
 
 export interface GeneratedOtp {
   code: string;
