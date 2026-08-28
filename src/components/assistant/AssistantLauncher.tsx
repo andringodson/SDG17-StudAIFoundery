@@ -3,7 +3,10 @@
 import { useState, useRef, useEffect } from 'react';
 import type { AssistantReply } from '@/app/api/assistant/message/route';
 import type { AssistantAction, AssistantLanguage } from '@/lib/assistant/knowledge';
-import { isSpeechSupported, startDictation, speechErrorMessage, type DictationHandle } from '@/lib/speech';
+import {
+  isSpeechSupported, isSecureContextForSpeech, startDictation, speechErrorMessage,
+  ensureMicPermission, hasMicPermission, type DictationSession
+} from '@/lib/speech';
 
 interface ChatMessage {
   from: 'user' | 'ai';
@@ -36,14 +39,24 @@ export function AssistantLauncher() {
   const [voiceSupported, setVoiceSupported] = useState(false);
   const [autoListen, setAutoListen] = useState(true);
   const [voiceError, setVoiceError] = useState('');
+  const [voiceActive, setVoiceActive] = useState(false); // session wanted, vs. engine currently open
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const dictationRef = useRef<DictationHandle | null>(null);
+  const dictationRef = useRef<DictationSession | null>(null);
+
+  /* Refs mirror state the dictation callbacks need. Those callbacks are
+     created once per session and would otherwise close over whatever
+     `busy` / `language` were at that moment — the reason a voice question
+     could be silently dropped after the first reply. */
+  const busyRef = useRef(false);
+  const sendRef = useRef<(text: string) => void>(() => {});
+  const finalTextRef = useRef('');
+  const sendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Checked after mount, never during render — the API exists only in the
   // browser, and reading it on the server would break hydration.
   useEffect(() => {
-    setVoiceSupported(isSpeechSupported());
+    setVoiceSupported(isSpeechSupported() && isSecureContextForSpeech());
     try {
       // Opt-out, not opt-in: hands-free is the requested default, but a
       // panel that switches the microphone on by itself must be refusable
@@ -52,61 +65,107 @@ export function AssistantLauncher() {
     } catch { /* private mode / blocked storage — keep the default */ }
   }, []);
 
+  function stopDictation() {
+    if (sendTimerRef.current) { clearTimeout(sendTimerRef.current); sendTimerRef.current = null; }
+    finalTextRef.current = '';
+    dictationRef.current?.stop();
+    dictationRef.current = null;
+    setVoiceActive(false);
+    setListening(false);
+  }
+
   function toggleAutoListen() {
     setAutoListen((on) => {
       const next = !on;
       try { localStorage.setItem('sdg17.autoListen', next ? 'on' : 'off'); } catch { /* ignore */ }
-      if (!next && listening) { dictationRef.current?.stop(); setListening(false); }
+      if (!next) stopDictation();
       return next;
     });
   }
 
+  /** Opens a dictation session that stays open until explicitly stopped.
+   * The session restarts itself through natural pauses (see lib/speech.ts);
+   * this only decides what to do with the words. */
   function beginDictation() {
+    if (dictationRef.current) return; // never run two engines at once
     setVoiceError('');
-    const handle = startDictation(
-      language,
-      (text, isFinal) => {
+
+    const session = startDictation(language, {
+      onTranscript: (text, isFinal) => {
         setInput(text);
-        // Auto-send on a completed utterance so speaking a question is one
-        // action, not "speak, then reach for the mouse".
-        if (isFinal) { dictationRef.current?.stop(); void send(text); }
+        if (!isFinal) return;
+        // Send after a short silence rather than on the first final segment,
+        // so a question spoken with a pause in it arrives whole instead of
+        // being cut in two.
+        finalTextRef.current = text;
+        if (sendTimerRef.current) clearTimeout(sendTimerRef.current);
+        sendTimerRef.current = setTimeout(() => {
+          const pending = finalTextRef.current.trim();
+          finalTextRef.current = '';
+          if (pending && !busyRef.current) sendRef.current(pending);
+        }, 900);
       },
-      (code) => { setVoiceError(speechErrorMessage(code)); setListening(false); },
-      () => setListening(false)
-    );
-    if (!handle) { setVoiceError('Voice input is not supported in this browser.'); return; }
-    dictationRef.current = handle;
-    setListening(true);
+      onError: (code) => {
+        const message = speechErrorMessage(code);
+        if (message) setVoiceError(message);
+        // A hard failure (permission denied) already stopped the session.
+        if (code === 'not-allowed' || code === 'service-not-allowed') {
+          dictationRef.current = null;
+          setVoiceActive(false);
+          setListening(false);
+        }
+      },
+      onListeningChange: setListening
+    });
+
+    if (!session) { setVoiceError('Voice input is not supported in this browser.'); return; }
+    dictationRef.current = session;
+    setVoiceActive(true);
   }
 
-  function toggleDictation() {
-    if (listening) { dictationRef.current?.stop(); return; }
+  /** The mic button. Requests permission explicitly on first use so the
+   * prompt and the engine can't race each other. */
+  async function toggleDictation() {
+    if (voiceActive) { stopDictation(); return; }
+    setVoiceError('');
+    const granted = await ensureMicPermission();
+    if (!granted) {
+      setVoiceError(speechErrorMessage('not-allowed'));
+      return;
+    }
     beginDictation();
   }
 
+  // Keep the live session's language in step with the language buttons.
+  useEffect(() => { dictationRef.current?.setLanguage(language); }, [language]);
+
   // Stop the microphone if the panel closes mid-utterance.
   useEffect(() => {
-    if (!open && listening) { dictationRef.current?.stop(); setListening(false); }
-  }, [open, listening]);
+    if (!open && dictationRef.current) stopDictation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
-  // Hands-free: start listening as soon as the panel opens, so asking by
-  // voice needs no click at all. Opening the panel is itself the user gesture
-  // browsers require before granting microphone access, so this is allowed —
-  // but only after the first grant, since an unprompted permission dialog on
-  // open would be hostile. Held back while a reply is in flight.
+  // Hands-free: start listening when the panel opens, so asking by voice
+  // needs no click. Only where permission was already granted — springing an
+  // unprompted permission dialog on open would be hostile; the mic button
+  // handles the first grant. Unlike before, this depends on voiceActive, so
+  // it isn't a one-shot: the session persists rather than dying at the first
+  // pause and never coming back.
   useEffect(() => {
-    if (!open || !voiceSupported || !autoListen || listening || busy) return;
+    if (!open || !voiceSupported || !autoListen || voiceActive) return;
     let cancelled = false;
-    navigator.mediaDevices?.enumerateDevices?.()
-      .then((devices) => {
-        // A non-empty label means permission was granted previously.
-        const alreadyGranted = devices.some((d) => d.kind === 'audioinput' && d.label !== '');
-        if (alreadyGranted && !cancelled) beginDictation();
-      })
-      .catch(() => { /* enumeration unavailable — leave it to the button */ });
+    hasMicPermission()
+      .then((granted) => { if (granted && !cancelled) beginDictation(); })
+      .catch(() => { /* leave it to the button */ });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, voiceSupported, autoListen, busy]);
+  }, [open, voiceSupported, autoListen, voiceActive]);
+
+  // Release timers on unmount.
+  useEffect(() => () => {
+    if (sendTimerRef.current) clearTimeout(sendTimerRef.current);
+    dictationRef.current?.stop();
+  }, []);
 
   useEffect(() => {
     fetch('/api/me').then((r) => r.json()).then((d) => { if (d.user?.role) setRole(d.user.role); }).catch(() => {});
@@ -129,6 +188,7 @@ export function AssistantLauncher() {
     setMessages((m) => [...m, { from: 'user', text }]);
     setInput('');
     setBusy(true);
+    busyRef.current = true;
     try {
       const res = await fetch('/api/assistant/message', {
         method: 'POST',
@@ -147,8 +207,13 @@ export function AssistantLauncher() {
       setMessages((m) => [...m, { from: 'ai', text: "I'm unable to respond right now. You can try again shortly." }]);
     } finally {
       setBusy(false);
+      busyRef.current = false;
     }
   }
+
+  // The dictation callbacks are created once per session, so they reach the
+  // current send() through this ref rather than closing over a stale one.
+  sendRef.current = send;
 
   async function confirmReminder(pc: NonNullable<ChatMessage['pendingConfirmation']>) {
     setBusy(true);
@@ -293,10 +358,22 @@ export function AssistantLauncher() {
               ))}
             </div>
             {voiceError && <p role="alert" className="mb-2 text-xs text-red-300">{voiceError}</p>}
-            {listening && (
+            {/* Distinguishes "engine open, speak now" from "session on, engine
+                cycling between utterances" — the second used to render as
+                nothing at all, which read as the mic having died. */}
+            {voiceActive && (
               <p role="status" className="mb-2 flex items-center gap-2 text-xs text-text-2">
-                <span className="mic-wave" aria-hidden="true"><i /><i /><i /><i /></span>
-                Listening — just speak.
+                {listening ? (
+                  <>
+                    <span className="mic-wave" aria-hidden="true"><i /><i /><i /><i /></span>
+                    Listening — just speak.
+                  </>
+                ) : (
+                  <>
+                    <span className="typing-dots" aria-hidden="true"><i /><i /><i /></span>
+                    Voice on — reconnecting…
+                  </>
+                )}
               </p>
             )}
             {voiceSupported && (
@@ -313,7 +390,7 @@ export function AssistantLauncher() {
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={listening ? 'Listening…' : 'Ask a question…'}
+              placeholder={voiceActive ? (listening ? 'Listening…' : 'Voice on…') : 'Ask a question…'}
               aria-label="Message"
               className="flex-1 min-h-[40px] rounded-lg border border-line bg-surface-2 px-3 text-sm"
             />
@@ -323,14 +400,14 @@ export function AssistantLauncher() {
               <button
                 type="button"
                 onClick={toggleDictation}
-                aria-label={listening ? 'Stop voice input' : 'Start voice input'}
-                aria-pressed={listening}
-                title={listening ? 'Stop listening' : 'Ask by voice'}
+                aria-label={voiceActive ? 'Stop voice input' : 'Start voice input'}
+                aria-pressed={voiceActive}
+                title={voiceActive ? 'Stop listening' : 'Ask by voice'}
                 className={`min-h-[40px] w-10 shrink-0 rounded-lg border text-base transition ${
-                  listening ? 'border-red-400 bg-red-400/15 text-red-300' : 'border-line text-text-2 hover:bg-white/5'
+                  voiceActive ? 'border-red-400 bg-red-400/15 text-red-300' : 'border-line text-text-2 hover:bg-white/5'
                 }`}
               >
-                {listening ? '■' : '🎤'}
+                {voiceActive ? '■' : '🎤'}
               </button>
             )}
             <button type="submit" disabled={busy} className="glow-btn min-h-[40px] rounded-lg px-4 text-sm font-semibold disabled:opacity-40">
